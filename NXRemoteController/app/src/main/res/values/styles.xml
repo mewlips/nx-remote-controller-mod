@@ -33,6 +33,7 @@
         <item name="android:gravity">center</item>
         <item name="android:background">#C0C080</item>
         <item name="android:onClick">onButtonClick</item>
+        <item name="android:layout_margin">2dp</item>
     </style>
 
 </resources>

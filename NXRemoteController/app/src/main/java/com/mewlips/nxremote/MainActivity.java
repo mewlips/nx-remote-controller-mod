@@ -48,11 +48,20 @@ public class MainActivity extends AppCompatActivity
     private static final int XWIN_SEGMENT_NUM_PIXELS = 320;
     private static final int XWIN_SEGMENT_SIZE = 2 + (XWIN_SEGMENT_NUM_PIXELS * 4); // 2 bytes (INDEX) + 320 pixels (BGRA)
 
+    private static final int JOG_TYPE_1 = 0;
+    private static final int JOG_TYPE_2 = 1;
+
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
 
     private ModeWheelAdapter mModeWheelAdapter;
     private WheelView mWheelViewMode;
+
+    private JogWheelAdapter mJogWheelAdapterJog1;
+    private WheelView mWheelViewJog1;
+
+    private JogWheelAdapter mJogWheelAdapterJog2;
+    private WheelView mWheelViewJog2;
 
     private Socket mVideoSocket;
     private InputStream mVideoReader;
@@ -306,9 +315,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        mWheelViewMode = (WheelView) findViewById(R.id.wheelviewMode);
-
-
+        mWheelViewMode = (WheelView) findViewById(R.id.wheelViewMode);
         mModeWheelAdapter = new ModeWheelAdapter();
         mWheelViewMode.setAdapter(mModeWheelAdapter);
 
@@ -335,6 +342,25 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        mWheelViewJog1 = (WheelView) findViewById(R.id.wheelViewJog1);
+        mJogWheelAdapterJog1 = new JogWheelAdapter(JOG_TYPE_1);
+        mWheelViewJog1.setAdapter(mJogWheelAdapterJog1);
+        mWheelViewJog1.setOnWheelItemSelectedListener(new WheelView.OnWheelItemSelectListener() {
+            @Override
+            public void onWheelItemSelected(WheelView parent,  Drawable itemDrawable, int position) {
+                Log.d(TAG, "jog1 position = " + position);
+            }
+        });
+
+        mWheelViewJog2 = (WheelView) findViewById(R.id.wheelViewJog2);
+        mJogWheelAdapterJog2 = new JogWheelAdapter(JOG_TYPE_2);
+        mWheelViewJog2.setAdapter(mJogWheelAdapterJog2);
+        mWheelViewJog2.setOnWheelItemSelectedListener(new WheelView.OnWheelItemSelectListener() {
+            @Override
+            public void onWheelItemSelected(WheelView parent,  Drawable itemDrawable, int position) {
+                Log.d(TAG, "jog2 position = " + position);
+            }
+        });
     }
 
     @Override
@@ -579,18 +605,18 @@ public class MainActivity extends AppCompatActivity
             case R.id.keyAEL:
                 key = KEY_AEL;
                 break;
-            case R.id.jog1CCW:
-                key = KEY_JOG1_CCW;
-                break;
-            case R.id.jog1CW:
-                key = KEY_JOG1_CW;
-                break;
-            case R.id.jog2CCW:
-                key = KEY_JOG_CCW;
-                break;
-            case R.id.jog2CW:
-                key = KEY_JOG_CW;
-                break;
+//            case R.id.jog1CCW:
+//                key = KEY_JOG1_CCW;
+//                break;
+//            case R.id.jog1CW:
+//                key = KEY_JOG1_CW;
+//                break;
+//            case R.id.jog2CCW:
+//                key = KEY_JOG_CCW;
+//                break;
+//            case R.id.jog2CW:
+//                key = KEY_JOG_CW;
+//                break;
             case R.id.keyRec:
                 key = KEY_REC;
                 break;
@@ -628,54 +654,54 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private class ModeWheelAdapter implements WheelAdapter {
-        private class TextDrawable extends Drawable {
-            private static final int DEFAULT_COLOR = Color.WHITE;
-            private static final int DEFAULT_TEXTSIZE = 15;
-            private Paint mPaint;
-            private CharSequence mText;
-            private int mIntrinsicWidth;
-            private int mIntrinsicHeight;
+    private class TextDrawable extends Drawable {
+        private static final int DEFAULT_COLOR = Color.WHITE;
+        private static final int DEFAULT_TEXTSIZE = 15;
+        private Paint mPaint;
+        private CharSequence mText;
+        private int mIntrinsicWidth;
+        private int mIntrinsicHeight;
 
-            public TextDrawable(Resources res, CharSequence text) {
-                mText = text;
-                mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                mPaint.setColor(DEFAULT_COLOR);
-                mPaint.setTextAlign(Paint.Align.CENTER);
-                float textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
-                        DEFAULT_TEXTSIZE, res.getDisplayMetrics());
-                mPaint.setTextSize(textSize);
-                mIntrinsicWidth = (int) (mPaint.measureText(mText, 0, mText.length()) + .5);
-                mIntrinsicHeight = mPaint.getFontMetricsInt(null);
-            }
-            @Override
-            public void draw(Canvas canvas) {
-                Rect bounds = getBounds();
-                canvas.drawText(mText, 0, mText.length(),
-                        bounds.centerX(), bounds.centerY(), mPaint);
-            }
-            @Override
-            public int getOpacity() {
-                return mPaint.getAlpha();
-            }
-            @Override
-            public int getIntrinsicWidth() {
-                return mIntrinsicWidth;
-            }
-            @Override
-            public int getIntrinsicHeight() {
-                return mIntrinsicHeight;
-            }
-            @Override
-            public void setAlpha(int alpha) {
-                mPaint.setAlpha(alpha);
-            }
-            @Override
-            public void setColorFilter(ColorFilter filter) {
-                mPaint.setColorFilter(filter);
-            }
+        public TextDrawable(Resources res, CharSequence text) {
+            mText = text;
+            mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mPaint.setColor(DEFAULT_COLOR);
+            mPaint.setTextAlign(Paint.Align.CENTER);
+            float textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                    DEFAULT_TEXTSIZE, res.getDisplayMetrics());
+            mPaint.setTextSize(textSize);
+            mIntrinsicWidth = (int) (mPaint.measureText(mText, 0, mText.length()) + .5);
+            mIntrinsicHeight = mPaint.getFontMetricsInt(null);
         }
+        @Override
+        public void draw(Canvas canvas) {
+            Rect bounds = getBounds();
+            canvas.drawText(mText, 0, mText.length(),
+                    bounds.centerX(), bounds.centerY(), mPaint);
+        }
+        @Override
+        public int getOpacity() {
+            return mPaint.getAlpha();
+        }
+        @Override
+        public int getIntrinsicWidth() {
+            return mIntrinsicWidth;
+        }
+        @Override
+        public int getIntrinsicHeight() {
+            return mIntrinsicHeight;
+        }
+        @Override
+        public void setAlpha(int alpha) {
+            mPaint.setAlpha(alpha);
+        }
+        @Override
+        public void setColorFilter(ColorFilter filter) {
+            mPaint.setColorFilter(filter);
+        }
+    }
 
+    private class ModeWheelAdapter implements WheelAdapter {
         private class Mode {
             public String mMode;
             public TextDrawable mDrawable;
@@ -732,6 +758,25 @@ public class MainActivity extends AppCompatActivity
         }
         public String getModeOfSelectedPosition() {
             return mModes[mSelectedPosition].getMode();
+        }
+    }
+
+    private class JogWheelAdapter implements WheelAdapter {
+        private Drawable mDrawable = new TextDrawable(getResources(), "I");
+        private int mType;
+
+        public JogWheelAdapter(int type) {
+            mType = type;
+        }
+
+        @Override
+        public Drawable getDrawable(int position) {
+            return mDrawable;
+        }
+
+        @Override
+        public int getCount() {
+            return 50;
         }
     }
 }
