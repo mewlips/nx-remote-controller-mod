@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.mewlips.nxremote.MainActivity"
+    tools:showIn="@layout/app_bar_main"
+    android:keepScreenOn="true"
+    android:background="#202020">
+
+    <ImageView
+        android:id="@+id/imageViewVideo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter" />
+
+    <ImageView
+        android:id="@+id/imageViewXWin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter" />
+
+    <GridLayout
+        android:id="@+id/layoutModeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/imageViewXWin"
+        android:columnCount="8"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/modeP"
+            style="@style/modeButton"
+            android:text="P" />
+        <TextView
+            android:id="@+id/modeA"
+            style="@style/modeButton"
+            android:text="A" />
+        <TextView
+            android:id="@+id/modeS"
+            style="@style/modeButton"
+            android:text="S" />
+        <TextView
+            android:id="@+id/modeM"
+            style="@style/modeButton"
+            android:text="M" />
+        <TextView
+            android:id="@+id/modeC"
+            style="@style/modeButton"
+            android:text="C" />
+        <TextView
+            android:id="@+id/modeSAS"
+            style="@style/modeButton"
+            android:text="SAS" />
+        <TextView
+            android:id="@+id/modeScene"
+            style="@style/modeButton"
+            android:text="[S]" />
+        <TextView
+            android:id="@+id/modeAuto"
+            style="@style/modeButton"
+            android:text="AUTO" />
+    </GridLayout>
+
+    <GridLayout
+        android:id="@+id/layoutJogButtons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/layoutModeButton"
+        android:columnCount="7"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/keyWifi"
+            style="@style/modeButton"
+            android:text="WiFi" />
+        <TextView
+            android:id="@+id/keyAEL"
+            style="@style/modeButton"
+            android:text="AEL" />
+        <TextView
+            android:id="@+id/jog1CCW"
+            style="@style/modeButton"
+            android:text="&lt;" />
+        <TextView
+            android:id="@+id/jog1CW"
+            style="@style/modeButton"
+            android:text="&gt;" />
+        <TextView
+            android:id="@+id/jog2CCW"
+            style="@style/modeButton"
+            android:text="&lt;" />
+        <TextView
+            android:id="@+id/jog2CW"
+            style="@style/modeButton"
+            android:text="&gt;" />
+        <TextView
+            android:id="@+id/keyRec"
+            style="@style/modeButton"
+            android:text="Rec." />
+    </GridLayout>
+
+    <GridLayout
+        android:id="@+id/layoutKeypad"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/layoutJogButtons"
+        android:columnCount="3"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/keyMenu"
+            style="@style/keypadButton"
+            android:text="MENU" />
+        <TextView
+            android:id="@+id/keyUp"
+            style="@style/keypadButton"
+            android:text="UP (DISP)" />
+        <TextView
+            android:id="@+id/keyFn"
+            style="@style/keypadButton"
+            android:text="Fn" />
+        <TextView
+            android:id="@+id/keyLeft"
+            style="@style/keypadButton"
+            android:text="Left (Drive)" />
+        <TextView
+            android:id="@+id/keyOK"
+            style="@style/keypadButton"
+            android:text="OK" />
+        <TextView
+            android:id="@+id/keyRight"
+            style="@style/keypadButton"
+            android:text="Right (AF)" />
+        <TextView
+            android:id="@+id/keyPB"
+            style="@style/keypadButton"
+            android:text="PB" />
+        <TextView
+            android:id="@+id/keyDown"
+            style="@style/keypadButton"
+            android:text="Down (ISO)" />
+        <TextView
+            android:id="@+id/keyDel"
+            style="@style/keypadButton"
+            android:text="Del" />
+    </GridLayout>
+
+</RelativeLayout>
