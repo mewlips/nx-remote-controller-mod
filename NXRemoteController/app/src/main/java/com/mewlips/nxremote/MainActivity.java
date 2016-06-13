@@ -1,21 +1,28 @@
 package com.mewlips.nxremote;
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+
+import com.lukedeighton.wheelview.WheelView;
+import com.lukedeighton.wheelview.adapter.WheelAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +50,9 @@ public class MainActivity extends AppCompatActivity
 
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
+
+    private ModeWheelAdapter mModeWheelAdapter;
+    private WheelView mWheelViewMode;
 
     private Socket mVideoSocket;
     private InputStream mVideoReader;
@@ -222,7 +232,9 @@ public class MainActivity extends AppCompatActivity
         }
 
         public void execute(String command) {
-            mBlockingQueue.add(command);
+            if (mExecutorSocket != null) {
+                mBlockingQueue.add(command);
+            }
         }
     }
 
@@ -230,23 +242,23 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//        });
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+//        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+//                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+//        drawer.setDrawerListener(toggle);
+//        toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
@@ -293,6 +305,36 @@ public class MainActivity extends AppCompatActivity
                 return false;
             }
         });
+
+        mWheelViewMode = (WheelView) findViewById(R.id.wheelviewMode);
+
+
+        mModeWheelAdapter = new ModeWheelAdapter();
+        mWheelViewMode.setAdapter(mModeWheelAdapter);
+
+        mWheelViewMode.setOnWheelItemSelectedListener(new WheelView.OnWheelItemSelectListener() {
+            @Override
+            public void onWheelItemSelected(WheelView parent,  Drawable itemDrawable, int position) {
+                //Log.d(TAG, "angle = " + mWheelViewMode.getAngleForPosition(position));
+                mModeWheelAdapter.setSelectedPosition(position);
+                Log.d(TAG, "position = " + position + ", " + mModeWheelAdapter.getModeOfSelectedPosition());
+            }
+        });
+        mWheelViewMode.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                int action = event.getAction() & MotionEvent.ACTION_MASK;
+                if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                    mWheelViewMode.setSelected(mModeWheelAdapter.getSelectedPosition());
+                    //mWheelViewMode.setAngle(mWheelViewMode.getAngleForPosition(mModeWheelAdapter.getSelectedPosition()));
+                    Log.d(TAG, "onTouch, position = " + mModeWheelAdapter.getSelectedPosition() + ", " + mModeWheelAdapter.getModeOfSelectedPosition());
+                    String keyCode = mModeWheelAdapter.getKeyCodeOfSelectedPosition();
+                    runCommand("/opt/usr/scripts/chroot.sh xdotool key " + keyCode);
+                }
+                return false;
+            }
+        });
+
     }
 
     @Override
@@ -469,47 +511,6 @@ public class MainActivity extends AppCompatActivity
         return 0xff000000 | (b<<16) | (g<<8) | r;
     }
 
-
-
-
-//st key [push/release/click] [command]
-//   [command]:
-//        up              left            right           down
-//        del             depth           meter           ok
-//        pwon            pwoff           reset           s1
-//        s2              menu            custom1         evf
-//        ael             rec             fn              ev
-//        pb              af_mode         wb              iso
-//        af_on           light           mf_zoom         wifi
-//        end
-//
-//st key jog [command]
-//   [command]:
-//        jog1_cw         jog1_ccw        jog2_cw         jog2_ccw
-//
-//
-//st key mode [command]
-//   [command]:
-//        scene           smart           p               a
-//        s               m               custom2         custom1
-//
-//
-//st key wheel [command]
-//   [command]:
-//        wheel_cw        wheel_ccw
-//
-//st key drive [command]
-//   [command]:
-//        single          conti_n         conti_h         timer
-//        bracket
-//
-//st key touch [push/release/click] [x] [y]
-//
-//
-//st key log [on/off]
-
-
-
     private static final String KEY_UP = "KP_Up";
     private static final String KEY_LEFT = "KP_Left";
     private static final String KEY_RIGHT = "KP_Right";
@@ -572,32 +573,6 @@ public class MainActivity extends AppCompatActivity
     public void onButtonClick(View v) {
         String key = "";
         switch (v.getId()) {
-            case R.id.modeP:
-                key = KEY_MODE_P;
-                break;
-            case R.id.modeA:
-                key = KEY_MODE_A;
-                break;
-            case R.id.modeS:
-                key = KEY_MODE_S;
-                break;
-            case R.id.modeM:
-                key = KEY_MODE_M;
-                break;
-            case R.id.modeC:
-                key = KEY_MODE_CUSTOM1;
-                break;
-            case R.id.modeSAS:
-                //key = KEY_MODE_SAS;
-                key = ""; // FIXME: what??
-                break;
-            case R.id.modeScene:
-                key = KEY_MODE_SCENE;
-                break;
-            case R.id.modeAuto:
-                key = KEY_MODE_SMART;
-                break;
-
             case R.id.keyWifi:
                 key = KEY_WIFI;
                 break;
@@ -650,6 +625,113 @@ public class MainActivity extends AppCompatActivity
         }
         if (!key.equals("")) {
             runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
+        }
+    }
+
+    private class ModeWheelAdapter implements WheelAdapter {
+        private class TextDrawable extends Drawable {
+            private static final int DEFAULT_COLOR = Color.WHITE;
+            private static final int DEFAULT_TEXTSIZE = 15;
+            private Paint mPaint;
+            private CharSequence mText;
+            private int mIntrinsicWidth;
+            private int mIntrinsicHeight;
+
+            public TextDrawable(Resources res, CharSequence text) {
+                mText = text;
+                mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                mPaint.setColor(DEFAULT_COLOR);
+                mPaint.setTextAlign(Paint.Align.CENTER);
+                float textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                        DEFAULT_TEXTSIZE, res.getDisplayMetrics());
+                mPaint.setTextSize(textSize);
+                mIntrinsicWidth = (int) (mPaint.measureText(mText, 0, mText.length()) + .5);
+                mIntrinsicHeight = mPaint.getFontMetricsInt(null);
+            }
+            @Override
+            public void draw(Canvas canvas) {
+                Rect bounds = getBounds();
+                canvas.drawText(mText, 0, mText.length(),
+                        bounds.centerX(), bounds.centerY(), mPaint);
+            }
+            @Override
+            public int getOpacity() {
+                return mPaint.getAlpha();
+            }
+            @Override
+            public int getIntrinsicWidth() {
+                return mIntrinsicWidth;
+            }
+            @Override
+            public int getIntrinsicHeight() {
+                return mIntrinsicHeight;
+            }
+            @Override
+            public void setAlpha(int alpha) {
+                mPaint.setAlpha(alpha);
+            }
+            @Override
+            public void setColorFilter(ColorFilter filter) {
+                mPaint.setColorFilter(filter);
+            }
+        }
+
+        private class Mode {
+            public String mMode;
+            public TextDrawable mDrawable;
+            public String mKey;
+            public Mode(String mode, String key) {
+                mMode = mode;
+                mDrawable = new TextDrawable(res, mode);
+                mKey = key;
+            }
+            public String getMode() {
+                return mMode;
+            }
+            public Drawable getDrawable() {
+                return mDrawable;
+            }
+            public String getKey() {
+                return mKey;
+            }
+        }
+
+        private Resources res = getResources();
+        Mode[] mModes = {
+                new Mode("c", KEY_MODE_CUSTOM1),
+                new Mode("m", KEY_MODE_M),
+                new Mode("s", KEY_MODE_S),
+                new Mode("a", KEY_MODE_A),
+                new Mode("p", KEY_MODE_P),
+                new Mode("auto", KEY_MODE_SMART),
+                new Mode("scn", KEY_MODE_SCENE),
+                //new Mode("SAS", KEY_MODE_SAS), // FIXME: find KEY_MODE_SAS
+        };
+        private int mSelectedPosition;
+
+        @Override
+        public Drawable getDrawable(int position) {
+            return mModes[position].getDrawable();
+        }
+
+        @Override
+        public int getCount() {
+            return mModes.length;
+        }
+
+        public void setSelectedPosition(int position) {
+            mSelectedPosition = position;
+        }
+
+        public int getSelectedPosition() {
+            return mSelectedPosition;
+        }
+
+        public String getKeyCodeOfSelectedPosition() {
+            return mModes[mSelectedPosition].getKey();
+        }
+        public String getModeOfSelectedPosition() {
+            return mModes[mSelectedPosition].getMode();
         }
     }
 }

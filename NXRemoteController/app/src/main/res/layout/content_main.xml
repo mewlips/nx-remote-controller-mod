@@ -29,55 +29,12 @@
         android:scaleType="fitCenter" />
 
     <GridLayout
-        android:id="@+id/layoutModeButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/imageViewXWin"
-        android:columnCount="8"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/modeP"
-            style="@style/modeButton"
-            android:text="P" />
-        <TextView
-            android:id="@+id/modeA"
-            style="@style/modeButton"
-            android:text="A" />
-        <TextView
-            android:id="@+id/modeS"
-            style="@style/modeButton"
-            android:text="S" />
-        <TextView
-            android:id="@+id/modeM"
-            style="@style/modeButton"
-            android:text="M" />
-        <TextView
-            android:id="@+id/modeC"
-            style="@style/modeButton"
-            android:text="C" />
-        <TextView
-            android:id="@+id/modeSAS"
-            style="@style/modeButton"
-            android:text="SAS" />
-        <TextView
-            android:id="@+id/modeScene"
-            style="@style/modeButton"
-            android:text="[S]" />
-        <TextView
-            android:id="@+id/modeAuto"
-            style="@style/modeButton"
-            android:text="AUTO" />
-    </GridLayout>
-
-    <GridLayout
         android:id="@+id/layoutJogButtons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/layoutModeButton"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/imageViewXWin"
         android:columnCount="7"
         android:orientation="horizontal">
         <TextView
@@ -109,6 +66,24 @@
             style="@style/modeButton"
             android:text="Rec." />
     </GridLayout>
+
+    <com.lukedeighton.wheelview.WheelView
+        android:id="@+id/wheelviewMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/imageViewXWin"
+        android:layout_alignParentEnd="true"
+        app:wheelColor="#808080"
+        app:rotatableWheelDrawable="false"
+        app:selectionColor="#80FF8080"
+        app:selectionAngle="180.0"
+        app:wheelPosition="top"
+        app:wheelOffsetY="50dp"
+        app:repeatItems="true"
+        app:wheelRadius="50dp"
+        app:wheelItemCount="7"
+        app:wheelPadding="0dp"
+        app:wheelItemRadius="14dp"/>
 
     <GridLayout
         android:id="@+id/layoutKeypad"

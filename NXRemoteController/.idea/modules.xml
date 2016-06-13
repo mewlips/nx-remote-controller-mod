@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/NXRemote.iml" filepath="$PROJECT_DIR$/NXRemote.iml" />
+      <module fileurl="file://$PROJECT_DIR$/NXRemoteController.iml" filepath="$PROJECT_DIR$/NXRemoteController.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

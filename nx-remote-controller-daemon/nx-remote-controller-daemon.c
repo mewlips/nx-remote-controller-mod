@@ -271,7 +271,9 @@ void *start_xwin_capture(StreamerData *data)
                             break;
                         }
 
-                        fprintf(stderr, "[XWinCapture] count = %d, skip_count = %d\n", count, skip_count);
+                        if (skip_count != 1080) {
+                            fprintf(stderr, "[XWinCapture] count = %d, skip_count = %d\n", count, skip_count);
+                        }
                         break;
                     }
                 }
