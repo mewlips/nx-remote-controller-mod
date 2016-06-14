@@ -48,9 +48,6 @@ public class MainActivity extends AppCompatActivity
     private static final int XWIN_SEGMENT_NUM_PIXELS = 320;
     private static final int XWIN_SEGMENT_SIZE = 2 + (XWIN_SEGMENT_NUM_PIXELS * 4); // 2 bytes (INDEX) + 320 pixels (BGRA)
 
-    private static final int JOG_TYPE_1 = 0;
-    private static final int JOG_TYPE_2 = 1;
-
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
 
@@ -296,8 +293,7 @@ public class MainActivity extends AppCompatActivity
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
                         mSkipCount = SKIP_MOUSE_MOVE_COUNT;
-                        runCommand(command + "mousemove " + x + " " + y);
-                        runCommand(command + "mousedown 1");
+                        runCommand(command + "mousemove " + x + " " + y + " mousedown 1");
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         mSkipCount--;
@@ -307,8 +303,7 @@ public class MainActivity extends AppCompatActivity
                         }
                         return true;
                     case MotionEvent.ACTION_UP:
-                        runCommand(command + "mousemove " + x + " " + y);
-                        runCommand(command + "mouseup 1");
+                        runCommand(command + "mousemove " + x + " " + y + " mouseup 1");
                         break;
                 }
                 return false;
@@ -343,22 +338,46 @@ public class MainActivity extends AppCompatActivity
         });
 
         mWheelViewJog1 = (WheelView) findViewById(R.id.wheelViewJog1);
-        mJogWheelAdapterJog1 = new JogWheelAdapter(JOG_TYPE_1);
+        mJogWheelAdapterJog1 = new JogWheelAdapter();
         mWheelViewJog1.setAdapter(mJogWheelAdapterJog1);
         mWheelViewJog1.setOnWheelItemSelectedListener(new WheelView.OnWheelItemSelectListener() {
+            private int mPrevPosition = 0;
             @Override
             public void onWheelItemSelected(WheelView parent,  Drawable itemDrawable, int position) {
-                Log.d(TAG, "jog1 position = " + position);
+                String key;
+                if (mPrevPosition == 0 && position == mJogWheelAdapterJog1.getCount() - 1) {
+                    key = KEY_JOG1_CW;
+                } else if (mPrevPosition == mJogWheelAdapterJog1.getCount() -1 && position == 0) {
+                    key = KEY_JOG1_CCW;
+                } else if (mPrevPosition > position) {
+                    key = KEY_JOG1_CW;
+                } else {
+                    key = KEY_JOG1_CCW;
+                }
+                runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
+                mPrevPosition = position;
             }
         });
 
         mWheelViewJog2 = (WheelView) findViewById(R.id.wheelViewJog2);
-        mJogWheelAdapterJog2 = new JogWheelAdapter(JOG_TYPE_2);
+        mJogWheelAdapterJog2 = new JogWheelAdapter();
         mWheelViewJog2.setAdapter(mJogWheelAdapterJog2);
         mWheelViewJog2.setOnWheelItemSelectedListener(new WheelView.OnWheelItemSelectListener() {
+            private int mPrevPosition = 0;
             @Override
             public void onWheelItemSelected(WheelView parent,  Drawable itemDrawable, int position) {
-                Log.d(TAG, "jog2 position = " + position);
+                String key;
+                if (mPrevPosition == 0 && position == mJogWheelAdapterJog1.getCount() - 1) {
+                    key = KEY_JOG_CW;
+                } else if (mPrevPosition == mJogWheelAdapterJog1.getCount() - 1 && position == 0) {
+                    key = KEY_JOG_CCW;
+                } else if (mPrevPosition > position) {
+                    key = KEY_JOG_CW;
+                } else {
+                    key = KEY_JOG_CCW;
+                }
+                runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
+                mPrevPosition = position;
             }
         });
     }
@@ -605,18 +624,6 @@ public class MainActivity extends AppCompatActivity
             case R.id.keyAEL:
                 key = KEY_AEL;
                 break;
-//            case R.id.jog1CCW:
-//                key = KEY_JOG1_CCW;
-//                break;
-//            case R.id.jog1CW:
-//                key = KEY_JOG1_CW;
-//                break;
-//            case R.id.jog2CCW:
-//                key = KEY_JOG_CCW;
-//                break;
-//            case R.id.jog2CW:
-//                key = KEY_JOG_CW;
-//                break;
             case R.id.keyRec:
                 key = KEY_REC;
                 break;
@@ -763,11 +770,6 @@ public class MainActivity extends AppCompatActivity
 
     private class JogWheelAdapter implements WheelAdapter {
         private Drawable mDrawable = new TextDrawable(getResources(), "I");
-        private int mType;
-
-        public JogWheelAdapter(int type) {
-            mType = type;
-        }
 
         @Override
         public Drawable getDrawable(int position) {
