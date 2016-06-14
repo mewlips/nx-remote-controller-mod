@@ -1,35 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/nav_camera"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Import" />
-        <item
-            android:id="@+id/nav_gallery"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="Gallery" />
-        <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="Slideshow" />
-        <item
-            android:id="@+id/nav_manage"
-            android:icon="@drawable/ic_menu_manage"
-            android:title="Tools" />
-    </group>
+    <item android:title="Remote View">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/nav_full_remote"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="Full Remote Control" />
+                <item
+                    android:id="@+id/nav_without_live_view"
+                    android:icon="@drawable/ic_menu_gallery"
+                    android:title="Without LiveView" />
+                <item
+                    android:id="@+id/nav_live_view_only"
+                    android:icon="@drawable/ic_menu_slideshow"
+                    android:title="Live View only" />
+                <item
+                    android:id="@+id/nav_buttons_only"
+                    android:icon="@drawable/ic_menu_manage"
+                    android:title="Buttons only" />
+            </group>
+        </menu>
+    </item>
 
-    <item android:title="Communicate">
+    <item android:title="Camera Control">
         <menu>
             <item
-                android:id="@+id/nav_share"
+                android:id="@+id/nav_lcd_on_off"
                 android:icon="@drawable/ic_menu_share"
-                android:title="Share" />
+                android:title="LCD On/Off" />
             <item
-                android:id="@+id/nav_send"
+                android:id="@+id/nav_silent_shutter"
                 android:icon="@drawable/ic_menu_send"
-                android:title="Send" />
+                android:title="Silent Shutter" />
         </menu>
     </item>
 

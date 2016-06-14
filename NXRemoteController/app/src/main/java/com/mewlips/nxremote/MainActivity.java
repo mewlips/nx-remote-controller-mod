@@ -269,15 +269,7 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        mImageViewVideo = (ImageView) findViewById(R.id.imageViewVideo);
-        mImageViewXWin = (ImageView) findViewById(R.id.imageViewXWin);
-
-        int[] intArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
-        Bitmap bmp = Bitmap.createBitmap(intArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
-        mImageViewVideo.setImageBitmap(bmp);
-        mImageViewXWin.setImageBitmap(bmp);
-
-        mImageViewXWin.setOnTouchListener(new View.OnTouchListener() {
+        View.OnTouchListener onTouchListener = new View.OnTouchListener() {
             private static final int SKIP_MOUSE_MOVE_COUNT = 10;
             private int mSkipCount;
 
@@ -308,7 +300,18 @@ public class MainActivity extends AppCompatActivity
                 }
                 return false;
             }
-        });
+        };
+
+        int[] intArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
+        Bitmap bmp = Bitmap.createBitmap(intArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+
+        mImageViewVideo = (ImageView) findViewById(R.id.imageViewVideo);
+        mImageViewVideo.setOnTouchListener(onTouchListener);
+        mImageViewVideo.setImageBitmap(bmp);
+
+        mImageViewXWin = (ImageView) findViewById(R.id.imageViewXWin);
+        mImageViewXWin.setOnTouchListener(onTouchListener);
+        mImageViewXWin.setImageBitmap(bmp);
 
         mWheelViewMode = (WheelView) findViewById(R.id.wheelViewMode);
         mModeWheelAdapter = new ModeWheelAdapter();
@@ -382,12 +385,25 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    private void startVideoPlayer() {
+        if (mVideoSocket == null) {
+            new Thread(new VideoPlayer()).start();
+        }
+        mImageViewVideo.setVisibility(View.VISIBLE);
+    }
+    private void startXWinViewer() {
+        if (mXWinSocket == null) {
+            new Thread(new XWinViewer()).start();
+        }
+        mImageViewXWin.setVisibility(View.VISIBLE);
+    }
     @Override
     protected void onResume() {
         super.onResume();
 
-        new Thread(new VideoPlayer()).start();
-        new Thread(new XWinViewer()).start();
+        // TODO: setting
+        startVideoPlayer();
+        startXWinViewer();
         mCommandExecutor = new CommandExecutor();
         new Thread(mCommandExecutor).start();
     }
@@ -396,7 +412,7 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
 
-        closeSocket();
+        closeSockets();
     }
 
     @Override
@@ -437,18 +453,24 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+        if (id == R.id.nav_full_remote) {
+            startVideoPlayer();
+            startXWinViewer();
+        } else if (id == R.id.nav_without_live_view) {
+            closeVideoSocket();
+            startXWinViewer();
+        } else if (id == R.id.nav_live_view_only) {
+            closeXWinSocket();
+            startVideoPlayer();
+        } else if (id == R.id.nav_buttons_only) {
+            closeVideoSocket();
+            closeXWinSocket();
+            mImageViewVideo.setVisibility(View.GONE);
+            mImageViewXWin.setVisibility(View.GONE);
+        } else if (id == R.id.nav_lcd_on_off) {
+            runCommand("/opt/usr/scripts/lcd_toggle.sh");
+        } else if (id == R.id.nav_silent_shutter) {
+            runCommand("/opt/usr/scripts/rolling_shutter.sh");
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -456,7 +478,7 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private void closeSocket() {
+    private void closeVideoSocket() {
         if (mVideoReader != null) {
             try {
                 mVideoReader.close();
@@ -472,6 +494,10 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
+        mImageViewVideo.setVisibility(View.INVISIBLE);
+    }
+
+    private void closeXWinSocket() {
         if (mXWinReader != null) {
             try {
                 mXWinReader.close();
@@ -487,6 +513,13 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
+        mImageViewXWin.setVisibility(View.INVISIBLE);
+    }
+
+    private void closeSockets() {
+        closeVideoSocket();
+        closeXWinSocket();
+
         if (mExecutorWriter != null) {
             try {
                 mExecutorWriter.close();
