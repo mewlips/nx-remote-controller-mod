@@ -345,8 +345,14 @@ static void *start_xwin_capture(StreamerData *data)
 static void *start_executor(StreamerData *data)
 {
     FILE *client_sock;
+    int client_fd = data->client_fd;;
     char command_line[256];
     bool err = false;
+    FILE *out = NULL;
+    char buf[1024];
+    size_t read_size;
+    size_t write_size;
+    unsigned long size;
 
     client_sock = fdopen(data->client_fd, "r");
     if (client_sock == NULL) {
@@ -365,12 +371,55 @@ static void *start_executor(StreamerData *data)
     while (fgets(command_line, sizeof(command_line), client_sock)) {
         log("command = %s", command_line);
         command_line[strlen(command_line) - 1] = '\0'; // strip '\n' at end
-        system(command_line);
+
+        out = popen(command_line, "r");
+        if (out == NULL) {
+            print_error("popen() failed");
+            continue;
+        }
+
+        while (feof(out) == 0 && ferror(out) == 0) {
+            read_size = fread(buf, 1, sizeof(buf), out);
+            if (read_size == 0) {
+                break;
+            }
+            while (read_size > 0) {
+                size = htonl(read_size);
+                write_size = write(client_fd, (const void *)&size, 4);
+                if (write_size == -1) {
+                    print_error("write() failed!");
+                    goto error;
+                }
+                write_size = write(client_fd, buf, read_size);
+                if (write_size == -1) {
+                    print_error("write() failed!");
+                    goto error;
+                }
+                read_size -= write_size;
+            }
+        }
+
+        // EOF
+        size = 0;
+        write_size = write(client_fd, (const void *)&size, 4);
+        if (write_size == -1) {
+            print_error("write() failed!");
+            goto error;
+        }
+
+        if (pclose(out) == -1) {
+            print_error("pclose() failed!");
+        }
+        out = NULL;
     }
 
-    log("executor finished.");
-
 error:
+    if (out != NULL) {
+        if (pclose(out) == -1) {
+            print_error("pclose() failed!");
+        }
+    }
+    log("executor finished.");
     return NULL;
 }
 

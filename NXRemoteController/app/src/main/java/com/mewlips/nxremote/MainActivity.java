@@ -23,6 +23,7 @@ import android.widget.ImageView;
 import com.lukedeighton.wheelview.WheelView;
 import com.lukedeighton.wheelview.adapter.WheelAdapter;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity
 
     private Socket mExecutorSocket;
     private OutputStreamWriter mExecutorWriter;
+    private DataInputStream mExecutorInputStream;
     private CommandExecutor mCommandExecutor;
 
     private DatagramSocket mDiscoverySocket;
@@ -231,6 +233,7 @@ public class MainActivity extends AppCompatActivity
             try {
                 mExecutorSocket = new Socket(mCameraIpAddress, EXECUTOR_PORT);
                 mExecutorWriter = new OutputStreamWriter(mExecutorSocket.getOutputStream());
+                mExecutorInputStream = new DataInputStream(mExecutorSocket.getInputStream());
             } catch (IOException e) {
                 e.printStackTrace();
                 return;
@@ -239,14 +242,38 @@ public class MainActivity extends AppCompatActivity
             while (true) {
                 try {
                     String command = mBlockingQueue.take();
+                    byte[] readBuf = new byte[1024];
+
                     Log.d(TAG, "command = " + command);
                     try {
+                        if (mExecutorWriter == null || mExecutorInputStream == null) {
+                            if (mExecutorSocket != null) {
+                                mExecutorSocket.close();
+                                mExecutorSocket = null;
+                            }
+                            break;
+                        }
                         mExecutorWriter.write(command + "\n");
                         mExecutorWriter.flush();
+
+                        String commandOutput = "";
+                        while (true) {
+                            int size = mExecutorInputStream.readInt();
+                            if (size > 0) {
+                                while (size > 0) {
+                                    int readSize = mExecutorInputStream.read(readBuf, 0, size);
+                                    size -= readSize;
+                                    commandOutput += new String(readBuf, 0, readSize);
+                                }
+                            } else {
+                                Log.d(TAG, "command output (" + commandOutput.length() + ") = " + commandOutput);
+                                break;
+                            }
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                         try {
-                            Log.d(TAG, "exectuor write failed.");
+                            Log.d(TAG, "exectuor read or write failed.");
                             if (mExecutorSocket != null) {
                                 mExecutorSocket.close();
                                 mExecutorSocket = null;
@@ -285,10 +312,11 @@ public class MainActivity extends AppCompatActivity
             DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
             try {
-                mDiscoverySocket = new DatagramSocket(DISCOVERY_UDP_PORT, InetAddress.getByName("0.0.0.0"));
-                mDiscoverySocket.setBroadcast(true);
-
                 while (true) {
+                    if (mDiscoverySocket == null) {
+                        mDiscoverySocket = new DatagramSocket(DISCOVERY_UDP_PORT, InetAddress.getByName("0.0.0.0"));
+                        mDiscoverySocket.setBroadcast(true);
+                    }
                     mDiscoverySocket.receive(packet);
                     byte[] data = packet.getData();
                     String discoveryMessage = new String(data);
@@ -305,12 +333,14 @@ public class MainActivity extends AppCompatActivity
                                     ". [NX_REMOTE v" + version + " (" + model + ")]");
                             if (mDiscoveryListener != null) {
                                 mDiscoveryListener.onFound(version , model, ipAddress);
+                                Thread.sleep(5000); // wait for connect to camera
                             }
-                            break;
                         }
                     }
                 }
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             Log.d(TAG, "DiscoveryPacketReceiver finished.");
@@ -321,6 +351,7 @@ public class MainActivity extends AppCompatActivity
         DiscoveryListener discoveryListener = new DiscoveryListener() {
             @Override
             public void onFound(String version, String model, String ipAddress) {
+                disconnectFromCameraDaemon();
                 mCameraDaemonVersion = version;
                 mCameraIpAddress = ipAddress;
                 mCameraModel = model;
@@ -590,6 +621,8 @@ public class MainActivity extends AppCompatActivity
             runCommand("/opt/usr/scripts/lcd_toggle.sh");
         } else if (id == R.id.nav_silent_shutter) {
             runCommand("/opt/usr/scripts/rolling_shutter.sh");
+        } else if (id == R.id.nav_test_command) {
+            runCommand("find /opt/usr/scripts");
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -613,7 +646,12 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
-        mImageViewVideo.setVisibility(View.INVISIBLE);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mImageViewVideo.setVisibility(View.INVISIBLE);
+            }
+        });
     }
 
     private void closeXWinSocket() {
@@ -631,8 +669,14 @@ public class MainActivity extends AppCompatActivity
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            mXWinSocket = null;
         }
-        mImageViewXWin.setVisibility(View.INVISIBLE);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mImageViewXWin.setVisibility(View.INVISIBLE);
+            }
+        });
     }
 
     private void closeExecutorSocket() {
@@ -644,12 +688,21 @@ public class MainActivity extends AppCompatActivity
             }
             mExecutorWriter = null;
         }
+        if (mExecutorInputStream != null) {
+            try {
+                mExecutorInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mExecutorInputStream = null;
+        }
         if (mExecutorSocket != null) {
             try {
                 mExecutorSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            mExecutorSocket = null;
         }
         mCommandExecutor = null;
     }
