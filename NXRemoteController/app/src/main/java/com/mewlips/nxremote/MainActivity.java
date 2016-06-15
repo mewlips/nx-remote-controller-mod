@@ -15,7 +15,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,6 +26,9 @@ import com.lukedeighton.wheelview.adapter.WheelAdapter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -37,16 +39,17 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = "MainActivity";
     private static final boolean DEBUG = true;
 
-    private static final String STREAMER_IP = "192.168.0.252"; // TODO:
-    //private static final String STREAMER_IP = "192.168.43.150"; // TODO:
     private static final int VIDEO_STREAMER_PORT = 5678;
     private static final int XWIN_STREAMER_PORT = 5679;
     private static final int EXECUTOR_PORT = 5680;
+    private static final int DISCOVERY_UDP_PORT = 5681;
+
     private static final int FRAME_WIDTH = 720;
     private static final int FRAME_HEIGHT = 480;
     private static final int FRAME_VIDEO_SIZE = FRAME_WIDTH * FRAME_HEIGHT * 3 / 2; // NV12
     private static final int XWIN_SEGMENT_NUM_PIXELS = 320;
     private static final int XWIN_SEGMENT_SIZE = 2 + (XWIN_SEGMENT_NUM_PIXELS * 4); // 2 bytes (INDEX) + 320 pixels (BGRA)
+    private static final int DISCOVERY_PACKET_SIZE = 32;
 
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
@@ -70,12 +73,20 @@ public class MainActivity extends AppCompatActivity
     private OutputStreamWriter mExecutorWriter;
     private CommandExecutor mCommandExecutor;
 
+    private DatagramSocket mDiscoverySocket;
+    private String mCameraDaemonVersion;
+    private String mCameraModel;
+    private String mCameraIpAddress;
+
     private class VideoPlayer implements Runnable {
         private byte[] mBuffer = new byte[FRAME_VIDEO_SIZE];
         @Override
         public void run() {
+            if (mCameraIpAddress == null) {
+                return;
+            }
             try {
-                mVideoSocket = new Socket(STREAMER_IP, VIDEO_STREAMER_PORT);
+                mVideoSocket = new Socket(mCameraIpAddress, VIDEO_STREAMER_PORT);
                 mVideoReader = mVideoSocket.getInputStream();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -99,10 +110,12 @@ public class MainActivity extends AppCompatActivity
                     e.printStackTrace();
                 }
                 if (readSize == -1) {
-                    Log.d(TAG, "socket closed.");
+                    Log.d(TAG, "video read failed.");
                     try {
-                        mVideoSocket.close();
-                        mVideoSocket = null;
+                        if (mVideoSocket != null) {
+                            mVideoSocket.close();
+                            mVideoSocket = null;
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -132,8 +145,11 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void run() {
+            if (mCameraIpAddress == null) {
+                return;
+            }
             try {
-                mXWinSocket = new Socket(STREAMER_IP, XWIN_STREAMER_PORT);
+                mXWinSocket = new Socket(mCameraIpAddress, XWIN_STREAMER_PORT);
                 mXWinReader = mXWinSocket.getInputStream();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -158,10 +174,12 @@ public class MainActivity extends AppCompatActivity
                     e.printStackTrace();
                 }
                 if (readSize == -1) {
-                    Log.d(TAG, "socket closed.");
+                    Log.d(TAG, "xwin read failed.");
                     try {
-                        mXWinSocket.close();
-                        mXWinSocket = null;
+                        if (mXWinSocket != null) {
+                            mXWinSocket.close();
+                            mXWinSocket = null;
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -207,8 +225,11 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void run() {
+            if (mCameraIpAddress == null) {
+                return;
+            }
             try {
-                mExecutorSocket = new Socket(STREAMER_IP, EXECUTOR_PORT);
+                mExecutorSocket = new Socket(mCameraIpAddress, EXECUTOR_PORT);
                 mExecutorWriter = new OutputStreamWriter(mExecutorSocket.getOutputStream());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -225,11 +246,14 @@ public class MainActivity extends AppCompatActivity
                     } catch (IOException e) {
                         e.printStackTrace();
                         try {
-                            mExecutorSocket.close();
+                            Log.d(TAG, "exectuor write failed.");
+                            if (mExecutorSocket != null) {
+                                mExecutorSocket.close();
+                                mExecutorSocket = null;
+                            }
                         } catch (IOException e1) {
                             e1.printStackTrace();
                         }
-                        mExecutorSocket = null;
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -242,6 +266,81 @@ public class MainActivity extends AppCompatActivity
                 mBlockingQueue.add(command);
             }
         }
+    }
+
+    private interface DiscoveryListener {
+        void onFound(String version, String model, String ipAddress);
+    }
+
+    private class DiscoveryPacketReceiver implements Runnable {
+        private DiscoveryListener mDiscoveryListener;
+
+        public DiscoveryPacketReceiver(DiscoveryListener listener) {
+            mDiscoveryListener = listener;
+        }
+
+        @Override
+        public void run() {
+            byte[] buf = new byte[DISCOVERY_PACKET_SIZE];
+            DatagramPacket packet = new DatagramPacket(buf, buf.length);
+
+            try {
+                mDiscoverySocket = new DatagramSocket(DISCOVERY_UDP_PORT, InetAddress.getByName("0.0.0.0"));
+                mDiscoverySocket.setBroadcast(true);
+
+                while (true) {
+                    mDiscoverySocket.receive(packet);
+                    byte[] data = packet.getData();
+                    String discoveryMessage = new String(data);
+                    String[] cameraInfos = discoveryMessage.split("\\|");
+                    if (cameraInfos.length == 4) {
+                        String header = cameraInfos[0];
+                        String version = cameraInfos[1];
+                        String model = cameraInfos[2];
+                        // cameraInfos[3] is garbage
+                        String ipAddress = packet.getAddress().getHostAddress();
+
+                        if (header.equals("NX_REMOTE")) {
+                            Log.d(TAG, "discovery packet received from " + ipAddress +
+                                    ". [NX_REMOTE v" + version + " (" + model + ")]");
+                            if (mDiscoveryListener != null) {
+                                mDiscoveryListener.onFound(version , model, ipAddress);
+                            }
+                            break;
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Log.d(TAG, "DiscoveryPacketReceiver finished.");
+        }
+    };
+
+    private void startDiscovery() {
+        DiscoveryListener discoveryListener = new DiscoveryListener() {
+            @Override
+            public void onFound(String version, String model, String ipAddress) {
+                mCameraDaemonVersion = version;
+                mCameraIpAddress = ipAddress;
+                mCameraModel = model;
+                connectToCameraDaemon();
+            }
+        };
+        new Thread(new DiscoveryPacketReceiver(discoveryListener)).start();
+    }
+
+    private void stopDiscovery() {
+        if (mDiscoverySocket != null) {
+            mDiscoverySocket.close();
+            mDiscoverySocket = null;
+        }
+    }
+
+    private void connectToCameraDaemon() {
+        startVideoPlayer();
+        startXWinViewer();
+        startExecutor();
     }
 
     @Override
@@ -389,30 +488,46 @@ public class MainActivity extends AppCompatActivity
         if (mVideoSocket == null) {
             new Thread(new VideoPlayer()).start();
         }
-        mImageViewVideo.setVisibility(View.VISIBLE);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mImageViewVideo.setVisibility(View.VISIBLE);
+            }
+        });
     }
+
     private void startXWinViewer() {
         if (mXWinSocket == null) {
             new Thread(new XWinViewer()).start();
         }
-        mImageViewXWin.setVisibility(View.VISIBLE);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mImageViewXWin.setVisibility(View.VISIBLE);
+            }
+        });
     }
+
+    private void startExecutor() {
+        if (mExecutorSocket == null) {
+            mCommandExecutor = new CommandExecutor();
+            new Thread(mCommandExecutor).start();
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
 
-        // TODO: setting
-        startVideoPlayer();
-        startXWinViewer();
-        mCommandExecutor = new CommandExecutor();
-        new Thread(mCommandExecutor).start();
+        startDiscovery();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        closeSockets();
+        stopDiscovery();
+        disconnectFromCameraDaemon();
     }
 
     @Override
@@ -425,27 +540,27 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        // Inflate the menu; this adds items to the action bar if it is present.
+//        getMenuInflater().inflate(R.menu.main, menu);
+//        return true;
+//    }
+//
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        // Handle action bar item clicks here. The action bar will
+//        // automatically handle clicks on the Home/Up button, so long
+//        // as you specify a parent activity in AndroidManifest.xml.
+//        int id = item.getItemId();
+//
+//        //noinspection SimplifiableIfStatement
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
+//
+//        return super.onOptionsItemSelected(item);
+//    }
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -456,15 +571,19 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_full_remote) {
             startVideoPlayer();
             startXWinViewer();
+            startExecutor();
         } else if (id == R.id.nav_without_live_view) {
             closeVideoSocket();
             startXWinViewer();
+            startExecutor();
         } else if (id == R.id.nav_live_view_only) {
             closeXWinSocket();
             startVideoPlayer();
+            startExecutor();
         } else if (id == R.id.nav_buttons_only) {
             closeVideoSocket();
             closeXWinSocket();
+            startExecutor();
             mImageViewVideo.setVisibility(View.GONE);
             mImageViewXWin.setVisibility(View.GONE);
         } else if (id == R.id.nav_lcd_on_off) {
@@ -516,10 +635,7 @@ public class MainActivity extends AppCompatActivity
         mImageViewXWin.setVisibility(View.INVISIBLE);
     }
 
-    private void closeSockets() {
-        closeVideoSocket();
-        closeXWinSocket();
-
+    private void closeExecutorSocket() {
         if (mExecutorWriter != null) {
             try {
                 mExecutorWriter.close();
@@ -536,6 +652,16 @@ public class MainActivity extends AppCompatActivity
             }
         }
         mCommandExecutor = null;
+    }
+
+    private void disconnectFromCameraDaemon() {
+        closeVideoSocket();
+        closeXWinSocket();
+        closeExecutorSocket();
+
+        mCameraDaemonVersion = null;
+        mCameraIpAddress = null;
+        mCameraModel = null;
     }
 
     /**
