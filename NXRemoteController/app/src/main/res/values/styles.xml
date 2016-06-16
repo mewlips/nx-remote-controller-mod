@@ -20,9 +20,11 @@
     <style name="modeButton" parent="@android:style/TextAppearance.Small">
         <item name="android:layout_width">40dp</item>
         <item name="android:layout_height">40dp</item>
-        <item name="android:textColor">#00FF00</item>
+        <item name="android:layout_marginBottom">15dp</item>
+        <item name="android:layout_marginRight">10dp</item>
+        <item name="android:textColor">#FFFFFF</item>
         <item name="android:gravity">center</item>
-        <item name="android:background">#C000C0</item>
+        <item name="android:background">@drawable/circle</item>
         <item name="android:onClick">onButtonClick</item>
     </style>
 
@@ -31,7 +33,7 @@
         <item name="android:layout_height">50dp</item>
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:gravity">center</item>
-        <item name="android:background">#C0C080</item>
+        <item name="android:background">@drawable/rectangle</item>
         <item name="android:onClick">onButtonClick</item>
         <item name="android:layout_margin">2dp</item>
     </style>

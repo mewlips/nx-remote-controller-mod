@@ -1070,7 +1070,11 @@ public class WheelView extends View {
 
                 float wheelRadiusSquared = mWheelBounds.getRadius() * mWheelBounds.getRadius();
                 float touchRadiusSquared = mRadiusVector.x * mRadiusVector.x + mRadiusVector.y * mRadiusVector.y;
-                float touchFactor = TOUCH_FACTORS[(int) (touchRadiusSquared / wheelRadiusSquared * TOUCH_FACTORS.length)];
+                int index = (int) (touchRadiusSquared / wheelRadiusSquared * TOUCH_FACTORS.length);
+                if (index >= TOUCH_FACTORS.length) {
+                    index = TOUCH_FACTORS.length - 1;
+                }
+                float touchFactor = TOUCH_FACTORS[index];
                 float touchAngle = mWheelBounds.angleToDegrees(x, y);
                 float draggedAngle = -1f * Circle.shortestAngle(touchAngle, mLastTouchAngle) * touchFactor;
                 addAngle(draggedAngle);

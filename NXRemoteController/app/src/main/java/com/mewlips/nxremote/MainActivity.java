@@ -19,6 +19,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import com.lukedeighton.wheelview.WheelView;
 import com.lukedeighton.wheelview.adapter.WheelAdapter;
@@ -63,6 +64,8 @@ public class MainActivity extends AppCompatActivity
 
     private JogWheelAdapter mJogWheelAdapterJog2;
     private WheelView mWheelViewJog2;
+
+    private ImageView mShutterButton;
 
     private Socket mVideoSocket;
     private InputStream mVideoReader;
@@ -513,6 +516,83 @@ public class MainActivity extends AppCompatActivity
                 mPrevPosition = position;
             }
         });
+
+        mShutterButton = (ImageView) findViewById(R.id.shutterButton);
+        mShutterButton.setOnTouchListener(new View.OnTouchListener() {
+            private static final int SKIP_MOVE_COUNT = 5;
+            private int mSkipCount;
+
+            private float mPrevY;
+            private int mPrevHeight;
+            private boolean mS1Downed;
+            private boolean mS2Downed;
+             @Override
+             public boolean onTouch(View v, MotionEvent event) {
+                 float currY;
+                 int currHeight;
+                 RelativeLayout.LayoutParams layoutParams;
+
+                 int action = event.getAction() & MotionEvent.ACTION_MASK;
+                 switch (action) {
+                     case MotionEvent.ACTION_DOWN:
+                         mPrevY = event.getY();
+                         mPrevHeight = mShutterButton.getHeight();
+                         keyDown(KEY_S1);
+                         mS1Downed = true;
+                         Log.d(TAG, "S1 down");
+                         mSkipCount = SKIP_MOVE_COUNT;
+                         break;
+                     case MotionEvent.ACTION_MOVE:
+                         currY = event.getY();
+                         currHeight = mShutterButton.getHeight();
+                         if (mPrevY < currY) {
+                             if ((float)currHeight / (float)mPrevHeight > 0.9) {
+                                 layoutParams = (RelativeLayout.LayoutParams) mShutterButton.getLayoutParams();
+                                 layoutParams.setMargins(0, (int) (currY - mPrevY), 0, 0);
+                                 mShutterButton.setLayoutParams(layoutParams);
+                             }
+                         }
+                         if (mSkipCount == 0) {
+                             if (currHeight < mPrevHeight) {
+                                 if (!mS2Downed) {
+                                     keyDown(KEY_S2);
+                                     mS2Downed = true;
+                                     Log.d(TAG, "S2 down");
+                                 }
+                             } else {
+                                 if (mS2Downed) {
+                                     keyUp(KEY_S2);
+                                     mS2Downed = false;
+                                     Log.d(TAG, "S2 up");
+                                 }
+                             }
+                             mSkipCount = SKIP_MOVE_COUNT;
+                         } else {
+                             mSkipCount--;
+                         }
+                         break;
+                     case MotionEvent.ACTION_UP:
+                         layoutParams = (RelativeLayout.LayoutParams) mShutterButton.getLayoutParams();
+                         layoutParams.setMargins(0, 0, 0, 0);
+                         mShutterButton.setLayoutParams(layoutParams);
+                         if (mS2Downed) {
+                             keyUp(KEY_S2);
+                             mS2Downed = false;
+                             Log.d(TAG, "S2 up");
+                         }
+                         if (mS1Downed) {
+                             keyUp(KEY_S1);
+                             mS1Downed = false;
+                             Log.d(TAG, "S1 up");
+                         }
+                         return false;
+                     default:
+                         return false;
+                 }
+                 return true;
+             }
+        });
+
     }
 
     private void startVideoPlayer() {
@@ -830,11 +910,11 @@ public class MainActivity extends AppCompatActivity
     public void onButtonClick(View v) {
         String key = "";
         switch (v.getId()) {
-            case R.id.keyWifi:
-                key = KEY_WIFI;
-                break;
             case R.id.keyAEL:
                 key = KEY_AEL;
+                break;
+            case R.id.keyEV:
+                key = KEY_EV;
                 break;
             case R.id.keyRec:
                 key = KEY_REC;
@@ -869,8 +949,20 @@ public class MainActivity extends AppCompatActivity
                 break;
         }
         if (!key.equals("")) {
-            runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
+            keyClick(key);
         }
+    }
+
+    private void keyDown(String key) {
+        runCommand("/opt/usr/scripts/chroot.sh xdotool keydown " + key);
+    }
+
+    private void keyUp(String key) {
+        runCommand("/opt/usr/scripts/chroot.sh xdotool keyup " + key);
+    }
+
+    private void keyClick(String key) {
+        runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
     }
 
     private class TextDrawable extends Drawable {
