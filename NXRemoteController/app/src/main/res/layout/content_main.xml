@@ -91,7 +91,7 @@
             app:wheelOffsetY="50dp"
             app:repeatItems="true"
             app:wheelRadius="50dp"
-            app:wheelItemCount="7"
+            app:wheelItemCount="8"
             app:wheelPadding="0dp"
             app:wheelItemRadius="14dp"/>
 
@@ -136,6 +136,10 @@
                 style="@style/modeButton"
                 android:textColor="#FF0000"
                 android:text="Rec." />
+            <TextView
+                android:id="@+id/keyMod"
+                style="@style/modeButton"
+                android:text="MOD" />
         </GridLayout>
 
         <GridLayout
@@ -184,5 +188,29 @@
         </GridLayout>
     </LinearLayout>
 
+    <RelativeLayout
+        android:id="@+id/layoutWifiInfo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80FFFFFF">
+
+        <TextView
+            android:id="@+id/textViewInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/buttonWifiSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/textViewInfo"
+            android:text="@string/open_wifi_settings"/>
+        <Button
+            android:id="@+id/buttonHotSpotSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/buttonWifiSettings"
+            android:text="@string/open_hot_spot_settings" />
+    </RelativeLayout>
 
 </RelativeLayout>

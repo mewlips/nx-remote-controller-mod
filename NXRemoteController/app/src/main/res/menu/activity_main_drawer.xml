@@ -27,17 +27,13 @@
     <item android:title="Camera Control">
         <menu>
             <item
-                android:id="@+id/nav_lcd_on_off"
+                android:id="@+id/nav_lcd_on"
                 android:icon="@drawable/ic_menu_share"
-                android:title="LCD On/Off" />
+                android:title="LCD ON" />
             <item
-                android:id="@+id/nav_silent_shutter"
+                android:id="@+id/nav_lcd_off"
                 android:icon="@drawable/ic_menu_send"
-                android:title="Silent Shutter" />
-            <item
-                android:id="@+id/nav_test_command"
-                android:icon="@drawable/ic_menu_send"
-                android:title="test" />
+                android:title="LCD OFF" />
         </menu>
     </item>
 

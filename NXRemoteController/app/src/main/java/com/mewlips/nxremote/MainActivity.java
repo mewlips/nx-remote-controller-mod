@@ -1,5 +1,7 @@
 package com.mewlips.nxremote;
 
+import android.content.ComponentName;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -9,6 +11,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -18,6 +21,7 @@ import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -32,6 +36,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -52,6 +58,11 @@ public class MainActivity extends AppCompatActivity
     private static final int XWIN_SEGMENT_NUM_PIXELS = 320;
     private static final int XWIN_SEGMENT_SIZE = 2 + (XWIN_SEGMENT_NUM_PIXELS * 4); // 2 bytes (INDEX) + 320 pixels (BGRA)
     private static final int DISCOVERY_PACKET_SIZE = 32;
+
+    private static final String XDOTOOL_COMMAND
+            = "chroot /opt/usr/apps/nx-remote-controller-mod/tools /usr/bin/xdotool";
+    private static final String MOD_GUI_COMMAND
+            = "/opt/usr/nx-on-wake/mod_gui /opt/usr/nx-on-wake/main";
 
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
@@ -82,6 +93,9 @@ public class MainActivity extends AppCompatActivity
     private String mCameraDaemonVersion;
     private String mCameraModel;
     private String mCameraIpAddress;
+
+    private Button mButtonWifi;
+    private Button mButtonHotSpot;
 
     private class VideoPlayer implements Runnable {
         private byte[] mBuffer = new byte[FRAME_VIDEO_SIZE];
@@ -242,6 +256,16 @@ public class MainActivity extends AppCompatActivity
                 return;
             }
 
+            setRemoteControlState(true);
+
+            Timer timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    execute(""); // ping
+                }
+            }, 1000, 1000);
+
             while (true) {
                 try {
                     String command = mBlockingQueue.take();
@@ -253,6 +277,8 @@ public class MainActivity extends AppCompatActivity
                             if (mExecutorSocket != null) {
                                 mExecutorSocket.close();
                                 mExecutorSocket = null;
+                                setRemoteControlState(false);
+                                timer.cancel();
                             }
                             break;
                         }
@@ -280,6 +306,8 @@ public class MainActivity extends AppCompatActivity
                             if (mExecutorSocket != null) {
                                 mExecutorSocket.close();
                                 mExecutorSocket = null;
+                                setRemoteControlState(false);
+                                timer.cancel();
                             }
                         } catch (IOException e1) {
                             e1.printStackTrace();
@@ -296,6 +324,22 @@ public class MainActivity extends AppCompatActivity
                 mBlockingQueue.add(command);
             }
         }
+    }
+
+    private void setRemoteControlState(final boolean onConnected) {
+        Log.d(TAG, "setRemoteControlState(), onConnected = " + onConnected);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                RelativeLayout layout = (RelativeLayout) findViewById(R.id.layoutWifiInfo);
+                if (onConnected) {
+                    layout.setVisibility(View.GONE);
+                } else {
+                    layout.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
     }
 
     private interface DiscoveryListener {
@@ -411,7 +455,7 @@ public class MainActivity extends AppCompatActivity
                 int action = event.getAction() & MotionEvent.ACTION_MASK;
                 int x = (int) (event.getX() * (float)FRAME_WIDTH / (float)v.getWidth());
                 int y = (int) (event.getY() * (float)FRAME_HEIGHT / (float)v.getHeight());
-                String command = "/opt/usr/scripts/chroot.sh xdotool ";
+                String command = XDOTOOL_COMMAND + " ";
 
                 Log.d(TAG, "action = " + action + ", x = " + x + ", y = " + y);
 
@@ -467,7 +511,7 @@ public class MainActivity extends AppCompatActivity
                     //mWheelViewMode.setAngle(mWheelViewMode.getAngleForPosition(mModeWheelAdapter.getSelectedPosition()));
                     Log.d(TAG, "onTouch, position = " + mModeWheelAdapter.getSelectedPosition() + ", " + mModeWheelAdapter.getModeOfSelectedPosition());
                     String keyCode = mModeWheelAdapter.getKeyCodeOfSelectedPosition();
-                    runCommand("/opt/usr/scripts/chroot.sh xdotool key " + keyCode);
+                    keyClick(keyCode);
                 }
                 return false;
             }
@@ -490,7 +534,7 @@ public class MainActivity extends AppCompatActivity
                 } else {
                     key = KEY_JOG1_CCW;
                 }
-                runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
+                keyClick(key);
                 mPrevPosition = position;
             }
         });
@@ -512,7 +556,7 @@ public class MainActivity extends AppCompatActivity
                 } else {
                     key = KEY_JOG_CCW;
                 }
-                runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
+                keyClick(key);
                 mPrevPosition = position;
             }
         });
@@ -591,6 +635,27 @@ public class MainActivity extends AppCompatActivity
                  }
                  return true;
              }
+        });
+
+        mButtonWifi = (Button) findViewById(R.id.buttonWifiSettings);
+        mButtonWifi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+            }
+        });
+
+        mButtonHotSpot = (Button) findViewById(R.id.buttonHotSpotSettings);
+        mButtonHotSpot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final Intent intent = new Intent(Intent.ACTION_MAIN, null);
+                intent.addCategory(Intent.CATEGORY_LAUNCHER);
+                final ComponentName cn = new ComponentName("com.android.settings", "com.android.settings.TetherSettings");
+                intent.setComponent(cn);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            }
         });
 
     }
@@ -697,12 +762,10 @@ public class MainActivity extends AppCompatActivity
             startExecutor();
             mImageViewVideo.setVisibility(View.GONE);
             mImageViewXWin.setVisibility(View.GONE);
-        } else if (id == R.id.nav_lcd_on_off) {
-            runCommand("/opt/usr/scripts/lcd_toggle.sh");
-        } else if (id == R.id.nav_silent_shutter) {
-            runCommand("/opt/usr/scripts/rolling_shutter.sh");
-        } else if (id == R.id.nav_test_command) {
-            runCommand("find /opt/usr/scripts");
+        } else if (id == R.id.nav_lcd_on) {
+            runCommand("st app bb lcd on");
+        } else if (id == R.id.nav_lcd_off) {
+            runCommand("st app bb lcd off");
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -919,7 +982,9 @@ public class MainActivity extends AppCompatActivity
             case R.id.keyRec:
                 key = KEY_REC;
                 break;
-
+            case R.id.keyMod:
+                runCommand(MOD_GUI_COMMAND);
+                break;
             case R.id.keyMenu:
                 key = KEY_MENU;
                 break;
@@ -954,15 +1019,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void keyDown(String key) {
-        runCommand("/opt/usr/scripts/chroot.sh xdotool keydown " + key);
+        runCommand(XDOTOOL_COMMAND + " keydown " + key);
     }
 
     private void keyUp(String key) {
-        runCommand("/opt/usr/scripts/chroot.sh xdotool keyup " + key);
+        runCommand(XDOTOOL_COMMAND + " keyup " + key);
     }
 
     private void keyClick(String key) {
-        runCommand("/opt/usr/scripts/chroot.sh xdotool key " + key);
+        runCommand(XDOTOOL_COMMAND + " key " + key);
     }
 
     private class TextDrawable extends Drawable {
@@ -1035,13 +1100,14 @@ public class MainActivity extends AppCompatActivity
 
         private Resources res = getResources();
         Mode[] mModes = {
-                new Mode("c", KEY_MODE_CUSTOM1),
-                new Mode("m", KEY_MODE_M),
-                new Mode("s", KEY_MODE_S),
-                new Mode("a", KEY_MODE_A),
-                new Mode("p", KEY_MODE_P),
-                new Mode("auto", KEY_MODE_SMART),
-                new Mode("scn", KEY_MODE_SCENE),
+                new Mode("C1", KEY_MODE_CUSTOM1),
+                new Mode("M", KEY_MODE_M),
+                new Mode("S", KEY_MODE_S),
+                new Mode("A", KEY_MODE_A),
+                new Mode("P", KEY_MODE_P),
+                new Mode("AUTO", KEY_MODE_SMART),
+                new Mode("SCN", KEY_MODE_SCENE),
+                new Mode("C2", KEY_MODE_CUSTOM2),
                 //new Mode("SAS", KEY_MODE_SAS), // FIXME: find KEY_MODE_SAS
         };
         private int mSelectedPosition;
@@ -1085,4 +1151,5 @@ public class MainActivity extends AppCompatActivity
             return 50;
         }
     }
+
 }

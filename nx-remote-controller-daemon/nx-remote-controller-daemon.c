@@ -369,33 +369,36 @@ static void *start_executor(StreamerData *data)
     log("executor started.");
 
     while (fgets(command_line, sizeof(command_line), client_sock)) {
-        log("command = %s", command_line);
         command_line[strlen(command_line) - 1] = '\0'; // strip '\n' at end
 
-        out = popen(command_line, "r");
-        if (out == NULL) {
-            print_error("popen() failed");
-            continue;
-        }
+        if (strlen(command_line) > 0) {
+            log("command = %s", command_line);
 
-        while (feof(out) == 0 && ferror(out) == 0) {
-            read_size = fread(buf, 1, sizeof(buf), out);
-            if (read_size == 0) {
-                break;
+            out = popen(command_line, "r");
+            if (out == NULL) {
+                print_error("popen() failed");
+                continue;
             }
-            while (read_size > 0) {
-                size = htonl(read_size);
-                write_size = write(client_fd, (const void *)&size, 4);
-                if (write_size == -1) {
-                    print_error("write() failed!");
-                    goto error;
+
+            while (feof(out) == 0 && ferror(out) == 0) {
+                read_size = fread(buf, 1, sizeof(buf), out);
+                if (read_size == 0) {
+                    break;
                 }
-                write_size = write(client_fd, buf, read_size);
-                if (write_size == -1) {
-                    print_error("write() failed!");
-                    goto error;
+                while (read_size > 0) {
+                    size = htonl(read_size);
+                    write_size = write(client_fd, (const void *)&size, 4);
+                    if (write_size == -1) {
+                        print_error("write() failed!");
+                        goto error;
+                    }
+                    write_size = write(client_fd, buf, read_size);
+                    if (write_size == -1) {
+                        print_error("write() failed!");
+                        goto error;
+                    }
+                    read_size -= write_size;
                 }
-                read_size -= write_size;
             }
         }
 
@@ -407,7 +410,7 @@ static void *start_executor(StreamerData *data)
             goto error;
         }
 
-        if (pclose(out) == -1) {
+        if (out != NULL && pclose(out) == -1) {
             print_error("pclose() failed!");
         }
         out = NULL;

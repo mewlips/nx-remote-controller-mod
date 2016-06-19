@@ -9,4 +9,6 @@
     <string name="start">Start</string>
     <string name="stop">Stop</string>
 
+    <string name="open_wifi_settings">Open Wi-Fi Setting</string>
+    <string name="open_hot_spot_settings">Open Wi-Fi Hot-Spot Setting</string>
 </resources>
