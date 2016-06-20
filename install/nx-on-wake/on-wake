@@ -1,0 +1,14 @@
+#!/bin/bash
+
+INSTALL_LOG=/opt/storage/sdcard/nx-remote-controller-mod-install.log
+
+/opt/storage/sdcard/app/install.sh &> $INSTALL_LOG
+
+if [ -f /opt/storage/sdcard/nx-on-wake/on-wake ]; then
+    rm -f /opt/storage/sdcard/nx-on-wake/on-wake
+else
+    rm $INSTALL_LOG
+fi
+sync;sync;sync;
+
+/opt/usr/nx-on-wake/on-wake
