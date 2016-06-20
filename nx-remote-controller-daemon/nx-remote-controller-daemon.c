@@ -371,7 +371,10 @@ static void *start_executor(StreamerData *data)
     while (fgets(command_line, sizeof(command_line), client_sock)) {
         command_line[strlen(command_line) - 1] = '\0'; // strip '\n' at end
 
-        if (strlen(command_line) > 0) {
+        if (strlen(command_line) > 0 && command_line[0] == '@') {
+            printf("%s\n", command_line + 1);
+            fflush(stdout);
+        } else if (strlen(command_line) > 0) {
             log("command = %s", command_line);
 
             out = popen(command_line, "r");

@@ -60,9 +60,9 @@ public class MainActivity extends AppCompatActivity
     private static final int DISCOVERY_PACKET_SIZE = 32;
 
     private static final String XDOTOOL_COMMAND
-            = "chroot /opt/usr/apps/nx-remote-controller-mod/tools /usr/bin/xdotool";
+            = "@chroot /opt/usr/apps/nx-remote-controller-mod/tools /usr/bin/xdotool";
     private static final String MOD_GUI_COMMAND
-            = "/opt/usr/nx-on-wake/mod_gui /opt/usr/nx-on-wake/main";
+            = "@/opt/usr/nx-on-wake/mod_gui /opt/usr/nx-on-wake/main";
 
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
@@ -763,9 +763,9 @@ public class MainActivity extends AppCompatActivity
             mImageViewVideo.setVisibility(View.GONE);
             mImageViewXWin.setVisibility(View.GONE);
         } else if (id == R.id.nav_lcd_on) {
-            runCommand("st app bb lcd on");
+            runCommand("@st app bb lcd on");
         } else if (id == R.id.nav_lcd_off) {
-            runCommand("st app bb lcd off");
+            runCommand("@st app bb lcd off");
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
