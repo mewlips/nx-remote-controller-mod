@@ -117,17 +117,18 @@ static long long get_current_time()
     return milliseconds;
 }
 
+static int s_video_fps;
 static void *start_video_capture(StreamerData *data)
 {
     int client_fd = data->client_fd;
-    int fps = data->fps;
+    s_video_fps = data->fps;
     int fd;
     void *addrs[S_ADDRS_SIZE];
     int hashs[S_ADDRS_SIZE] = {0,};
     int count;
     int i, j, hash;
     long long start_time, end_time, time_diff;
-    long long frame_time = 1000ll / (long)fps;
+    long long frame_time = 1000ll / (long)s_video_fps;
 #ifdef DEBUG
     long long capture_start_time, capture_end_time;
 #endif
@@ -182,6 +183,7 @@ static void *start_video_capture(StreamerData *data)
             usleep((frame_time - time_diff) * 1000);
         }
         count++;
+        frame_time = 1000ll / (long)s_video_fps;
 
         if (err) {
             break;
@@ -204,13 +206,14 @@ static void *start_video_capture(StreamerData *data)
     return NULL;
 }
 
+static int s_xwin_fps;
 static void *start_xwin_capture(StreamerData *data)
 {
     int client_fd = data->client_fd;
-    int fps = data->fps;
+    s_xwin_fps = data->fps;
 
     long long start_time, end_time, time_diff;
-    long long frame_time = 1000ll / (long)fps;
+    long long frame_time = 1000ll / (long)s_xwin_fps;
 #ifdef DEBUG
     long long capture_start_time, capture_end_time;
 #endif
@@ -329,6 +332,7 @@ static void *start_xwin_capture(StreamerData *data)
             usleep((frame_time - time_diff) * 1000);
         }
         count++;
+        frame_time = 1000ll / (long)s_xwin_fps;
 
         if (err) {
             break;
@@ -372,12 +376,14 @@ static void *start_executor(StreamerData *data)
         command_line[strlen(command_line) - 1] = '\0'; // strip '\n' at end
 
         if (strlen(command_line) > 0 && command_line[0] == '@') {
+            // run command in background and no output return
             printf("%s\n", command_line + 1);
             fflush(stdout);
-        } else if (strlen(command_line) > 0) {
+        } else if (strlen(command_line) > 0 && command_line[0] == '$') {
+            // run command in foreground and return output
             log("command = %s", command_line);
 
-            out = popen(command_line, "r");
+            out = popen(command_line + 1, "r");
             if (out == NULL) {
                 print_error("popen() failed");
                 continue;
@@ -386,6 +392,9 @@ static void *start_executor(StreamerData *data)
             while (feof(out) == 0 && ferror(out) == 0) {
                 read_size = fread(buf, 1, sizeof(buf), out);
                 if (read_size == 0) {
+                    break;
+                } else if (read_size < 0 || read_size > sizeof(buf)) {
+                    fprintf(stderr, "read_size = %d\n", read_size);
                     break;
                 }
                 while (read_size > 0) {
@@ -403,6 +412,12 @@ static void *start_executor(StreamerData *data)
                     read_size -= write_size;
                 }
             }
+        } else if (strncmp("vfps=", command_line, 5) == 0) {
+            s_video_fps = atoi(command_line+5);
+            fprintf(stderr, "video fps = %d\n", s_video_fps);
+        } else if (strncmp("xfps=", command_line, 5) == 0) {
+            s_xwin_fps = atoi(command_line+5);
+            fprintf(stderr, "xwin fps = %d\n", s_xwin_fps);
         }
 
         // EOF

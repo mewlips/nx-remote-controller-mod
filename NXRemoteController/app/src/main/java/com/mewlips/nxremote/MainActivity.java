@@ -36,6 +36,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -63,6 +64,10 @@ public class MainActivity extends AppCompatActivity
             = "@chroot /opt/usr/apps/nx-remote-controller-mod/tools /usr/bin/xdotool";
     private static final String MOD_GUI_COMMAND
             = "@/opt/usr/nx-on-wake/mod_gui /opt/usr/nx-on-wake/main";
+    private static final String GET_HEVC_STATE_COMMAND
+            = "$cat /sys/kernel/debug/pmu/hevc/state";
+    private static final String GET_MOV_SIZE_COMMAND_NX500
+            = "$prefman get 0 0x0000a360 l";
 
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
@@ -96,6 +101,13 @@ public class MainActivity extends AppCompatActivity
 
     private Button mButtonWifi;
     private Button mButtonHotSpot;
+
+    private boolean mOnRecord;
+
+    private static final int VIDEO_SIZE_FHD_HD = 0;
+    private static final int VIDEO_SIZE_UHD = 1;
+    private static final int VIDEO_SIZE_VGA = 2;
+    private int mVideoSize = 0;
 
     private class VideoPlayer implements Runnable {
         private byte[] mBuffer = new byte[FRAME_VIDEO_SIZE];
@@ -142,8 +154,22 @@ public class MainActivity extends AppCompatActivity
                     break;
                 }
                 if (readSize == FRAME_VIDEO_SIZE) {
-                    int[] mIntArray = convertYUV420_NV12toRGB8888(mBuffer, FRAME_WIDTH, FRAME_HEIGHT);
-                    final Bitmap bmp = Bitmap.createBitmap(mIntArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+                    int width = FRAME_WIDTH;
+                    int height = FRAME_HEIGHT;
+                    if (mVideoSize == VIDEO_SIZE_VGA) {
+                        width = 640;
+                    } else if (mOnRecord && mVideoSize == VIDEO_SIZE_FHD_HD) {
+                        height = 404;
+                    } else if (mOnRecord && mVideoSize == VIDEO_SIZE_UHD) {
+                        height = 380;
+                    }
+                    int[] intArray;
+                    if (width == 640) {
+                        intArray = convertYUV420_NV12toRGB8888(Arrays.copyOfRange(mBuffer, 0, width * height * 3 / 2), width, height);
+                    } else {
+                        intArray = convertYUV420_NV12toRGB8888(mBuffer, width, height);
+                    }
+                    final Bitmap bmp = Bitmap.createBitmap(intArray, width, height, Bitmap.Config.ARGB_8888);
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -262,7 +288,7 @@ public class MainActivity extends AppCompatActivity
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    execute(""); // ping
+                    execute(GET_HEVC_STATE_COMMAND);
                 }
             }, 1000, 1000);
 
@@ -271,7 +297,9 @@ public class MainActivity extends AppCompatActivity
                     String command = mBlockingQueue.take();
                     byte[] readBuf = new byte[1024];
 
-                    Log.d(TAG, "command = " + command);
+                    if (!command.equals(GET_HEVC_STATE_COMMAND)) {
+                        Log.d(TAG, "command = " + command);
+                    }
                     try {
                         if (mExecutorWriter == null || mExecutorInputStream == null) {
                             if (mExecutorSocket != null) {
@@ -288,6 +316,10 @@ public class MainActivity extends AppCompatActivity
                         String commandOutput = "";
                         while (true) {
                             int size = mExecutorInputStream.readInt();
+                            if (size > readBuf.length) {
+                                Log.e(TAG, "size is too big. size = " + size);
+                                break;
+                            }
                             if (size > 0) {
                                 while (size > 0) {
                                     int readSize = mExecutorInputStream.read(readBuf, 0, size);
@@ -295,7 +327,44 @@ public class MainActivity extends AppCompatActivity
                                     commandOutput += new String(readBuf, 0, readSize);
                                 }
                             } else {
-                                Log.d(TAG, "command output (" + commandOutput.length() + ") = " + commandOutput);
+                                if (command.equals(GET_HEVC_STATE_COMMAND)) {
+                                    if (commandOutput.startsWith("on")) {
+                                        if (!mOnRecord) {
+                                            Log.d(TAG, "on record.");
+                                            mOnRecord = true;
+                                            onRecordStarted();
+                                        }
+                                    } else {
+                                        if (mOnRecord) {
+                                            Log.d(TAG, "record stopped.");
+                                            mOnRecord = false;
+
+                                            onRecordStopped();
+                                        }
+                                    }
+                                } else if (command.equals(GET_MOV_SIZE_COMMAND_NX500)) {
+                                    Log.d(TAG, "commandOutput = " + commandOutput);
+                                    if (commandOutput.startsWith("[app] in memory:") &&
+                                            commandOutput.length() > 30) {
+                                        String output = commandOutput.substring(29);
+                                        if (output.startsWith("0")) {
+                                            Log.d(TAG, "4096x2160");
+                                            mVideoSize = VIDEO_SIZE_UHD;
+                                        } else if (output.startsWith("9") || output.startsWith("10") || output.startsWith("11")) {
+                                            Log.d(TAG, "640x480");
+                                            mVideoSize = VIDEO_SIZE_VGA;
+                                        } else {
+                                            Log.d(TAG, "16/9");
+                                            mVideoSize = VIDEO_SIZE_FHD_HD;
+                                        }
+                                    } else if (commandOutput.equals("9")) {
+                                        // 640x480
+                                    }
+                                } else {
+                                    if (commandOutput.length() > 0) {
+                                        Log.d(TAG, "command output (" + commandOutput.length() + ") = " + commandOutput);
+                                    }
+                                }
                                 break;
                             }
                         }
@@ -324,6 +393,17 @@ public class MainActivity extends AppCompatActivity
                 mBlockingQueue.add(command);
             }
         }
+    }
+
+    private void onRecordStarted() {
+        runCommand("vfps=1");
+        runCommand("xfps=1");
+        runCommand(GET_MOV_SIZE_COMMAND_NX500); // NX500
+    }
+
+    private void onRecordStopped() {
+        runCommand("vfps=5");
+        runCommand("xfps=5");
     }
 
     private void setRemoteControlState(final boolean onConnected) {
