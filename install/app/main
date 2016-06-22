@@ -1,0 +1,8 @@
+button|Start|/opt/usr/apps/nx-remote-controller-mod/nx-remote-controller-daemon.sh
+button|Stop|/opt/usr/apps/nx-remote-controller-mod/off_nx-remote-controller-daemon.sh
+button|Open Wi-Fi Setting|/opt/usr/apps/nx-remote-controller-mod/externals/poker /tmp/var/run/memory/ap_setting/request_type 0x0:2900000001000000
+button| |
+button|About|/opt/usr/apps/nx-remote-controller-mod/about.sh
+button|Uninstall|/opt/usr/apps/nx-remote-controller-mod/uninstall.sh
+button|Back|/opt/usr/apps/nx-remote-controller-mod/externals/mod_gui apps
+button|Close|

@@ -44,7 +44,9 @@ mkdir -pv $TOOLS_PATH
 tar -C $TOOLS_PATH -xf $INSTALL_PATH/tools.tar
 rm -fv $INSTALL_PATH/tools.tar
 cp -rv $INSTALL_PATH/* $APP_PATH
+mv $APP_PATH/EV_MOBILE.sh /opt/usr/nx-on-wake/
 
+# ========= clean up ========
 rm -rfv $INSTALL_PATH
 rm -fv $APP_PATH/install.sh
 rm -fv $ON_WAKE
@@ -52,4 +54,5 @@ rm -rfv $EXT_APP_PATH
 
 sync; sync; sync;
 killall popup_timeout
-$APP_PATH/externals/popup_ok " [ Installation completed! ] " "" "OK"
+$APP_PATH/externals/popup_ok "[ Installation completed! ]<br>1. Make sure the camera and the android device are on the Wi-Fi network.<br>2. Press the EV + MOBILE buttons to run the app launcher." "" "NEXT"
+$APP_PATH/externals/popup_ok "3. Select 'Remote Controller' and 'Start'.<br>4. Launch the Android NX Remote Controller App." "" "OK"

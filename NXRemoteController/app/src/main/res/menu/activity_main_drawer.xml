@@ -7,15 +7,15 @@
                 <item
                     android:id="@+id/nav_full_remote"
                     android:icon="@drawable/ic_menu_camera"
-                    android:title="Full Remote Control" />
+                    android:title="Camera GUI + LiveView" />
                 <item
                     android:id="@+id/nav_without_live_view"
                     android:icon="@drawable/ic_menu_gallery"
-                    android:title="Without LiveView" />
+                    android:title="Camera GUI" />
                 <item
                     android:id="@+id/nav_live_view_only"
                     android:icon="@drawable/ic_menu_slideshow"
-                    android:title="Live View only" />
+                    android:title="LiveView" />
                 <item
                     android:id="@+id/nav_buttons_only"
                     android:icon="@drawable/ic_menu_manage"

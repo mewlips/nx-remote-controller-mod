@@ -2,6 +2,7 @@ package com.mewlips.nxremote;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -22,8 +23,10 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.lukedeighton.wheelview.WheelView;
 import com.lukedeighton.wheelview.adapter.WheelAdapter;
@@ -59,6 +62,10 @@ public class MainActivity extends AppCompatActivity
     private static final int XWIN_SEGMENT_NUM_PIXELS = 320;
     private static final int XWIN_SEGMENT_SIZE = 2 + (XWIN_SEGMENT_NUM_PIXELS * 4); // 2 bytes (INDEX) + 320 pixels (BGRA)
     private static final int DISCOVERY_PACKET_SIZE = 32;
+
+    private static final int VIDEO_SIZE_FHD_HD = 0;
+    private static final int VIDEO_SIZE_UHD = 1;
+    private static final int VIDEO_SIZE_VGA = 2;
 
     private static final String XDOTOOL_COMMAND
             = "@chroot /opt/usr/apps/nx-remote-controller-mod/tools /usr/bin/xdotool";
@@ -101,12 +108,10 @@ public class MainActivity extends AppCompatActivity
 
     private Button mButtonWifi;
     private Button mButtonHotSpot;
+    private TextView mButtonEv;
 
     private boolean mOnRecord;
 
-    private static final int VIDEO_SIZE_FHD_HD = 0;
-    private static final int VIDEO_SIZE_UHD = 1;
-    private static final int VIDEO_SIZE_VGA = 2;
     private int mVideoSize = 0;
 
     private class VideoPlayer implements Runnable {
@@ -328,18 +333,18 @@ public class MainActivity extends AppCompatActivity
                                 }
                             } else {
                                 if (command.equals(GET_HEVC_STATE_COMMAND)) {
-                                    if (commandOutput.startsWith("on")) {
-                                        if (!mOnRecord) {
-                                            Log.d(TAG, "on record.");
-                                            mOnRecord = true;
-                                            onRecordStarted();
-                                        }
-                                    } else {
+                                    if (commandOutput.startsWith("off")) {
                                         if (mOnRecord) {
                                             Log.d(TAG, "record stopped.");
                                             mOnRecord = false;
 
                                             onRecordStopped();
+                                        }
+                                    } else if (commandOutput.startsWith("on")) {
+                                        if (!mOnRecord) {
+                                            Log.d(TAG, "on record.");
+                                            mOnRecord = true;
+                                            onRecordStarted();
                                         }
                                     }
                                 } else if (command.equals(GET_MOV_SIZE_COMMAND_NX500)) {
@@ -357,8 +362,7 @@ public class MainActivity extends AppCompatActivity
                                             Log.d(TAG, "16/9");
                                             mVideoSize = VIDEO_SIZE_FHD_HD;
                                         }
-                                    } else if (commandOutput.equals("9")) {
-                                        // 640x480
+                                        setVideoMargin();
                                     }
                                 } else {
                                     if (commandOutput.length() > 0) {
@@ -404,6 +408,36 @@ public class MainActivity extends AppCompatActivity
     private void onRecordStopped() {
         runCommand("vfps=5");
         runCommand("xfps=5");
+        mVideoSize = -1;
+        setVideoMargin();
+    }
+
+    private void setVideoMargin() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                int width = mImageViewXWin.getWidth();
+                int height = mImageViewXWin.getHeight();
+                float wr = (float) width / 720f;
+                float hr = (float) height / 480f;
+                FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) mImageViewVideo.getLayoutParams();
+                switch (mVideoSize) {
+                    case VIDEO_SIZE_FHD_HD:
+                        layoutParams.setMargins(0, (int) (38 * hr), 0, (int) (38 * hr));
+                        break;
+                    case VIDEO_SIZE_UHD:
+                        layoutParams.setMargins(0, (int) (50 * hr), 0, (int) (50 * hr));
+                        break;
+                    case VIDEO_SIZE_VGA:
+                        layoutParams.setMargins((int) (40 * wr), 0, (int) (40 * wr), 0);
+                        break;
+                    default:
+                        layoutParams.setMargins(0, 0, 0, 0);
+                        break;
+                }
+                mImageViewVideo.setLayoutParams(layoutParams);
+            }
+        });
     }
 
     private void setRemoteControlState(final boolean onConnected) {
@@ -504,6 +538,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_main);
 //        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
@@ -561,6 +596,8 @@ public class MainActivity extends AppCompatActivity
 
         int[] intArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
         Bitmap bmp = Bitmap.createBitmap(intArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+
+        findViewById(R.id.layoutLcd).setOnTouchListener(onTouchListener);
 
         mImageViewVideo = (ImageView) findViewById(R.id.imageViewVideo);
         mImageViewVideo.setOnTouchListener(onTouchListener);
@@ -738,6 +775,25 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        mButtonEv = (TextView) findViewById(R.id.keyEV);
+        mButtonEv.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                int action = event.getAction() & MotionEvent.ACTION_MASK;
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        runCommand(XDOTOOL_COMMAND + " keydown " + KEY_EV);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        runCommand(XDOTOOL_COMMAND + " keyup " + KEY_EV);
+                        break;
+                    default:
+                        return true;
+                }
+                return false;
+            }
+        });
+
     }
 
     private void startVideoPlayer() {
@@ -840,8 +896,8 @@ public class MainActivity extends AppCompatActivity
             closeVideoSocket();
             closeXWinSocket();
             startExecutor();
-            mImageViewVideo.setVisibility(View.GONE);
-            mImageViewXWin.setVisibility(View.GONE);
+            mImageViewVideo.setVisibility(View.INVISIBLE);
+            mImageViewXWin.setVisibility(View.INVISIBLE);
         } else if (id == R.id.nav_lcd_on) {
             runCommand("@st app bb lcd on");
         } else if (id == R.id.nav_lcd_off) {
