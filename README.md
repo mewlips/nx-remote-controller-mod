@@ -22,7 +22,7 @@ Android NX Remote Controller App
 
 ## How To Use
 
-1. Make sure the camera and the android device are on the Wi-Fi network.
+1. Make sure the camera and the android device are on the same Wi-Fi network.
 2. Press the EV + MOBILE buttons to run the app launcher.
 3. Select 'Remote Controller' and 'Start'.
 4. Launch the Android NX Remote Controller App.
