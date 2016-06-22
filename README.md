@@ -4,18 +4,21 @@ Android NX Remote Controller App
 
 ## How To Install
 
-* Camera
- * Prerequisites
-  * NX500 firmware version 1.12 or NX1 firmware version 1.41
-  * nx-wake-on 1.0x or 1.1
-  * nx-patch 5.2
+### Camera
+ 
+* Prerequisites
+ - NX500 firmware version 1.12 or NX1 firmware version 1.41
+ - nx-wake-on 1.0x or 1.1
+ - nx-patch 5.2
 
- * Unzip the nx-remote-controller-mod.zip file to root of your SD card.
- * Insert the SD card into your camera and power up the camera.
- * Wait. The installation will be completed soon.
+* Unzip the nx-remote-controller-mod.zip file to root of your SD card.
 
-* Android
- * Install the https://github.com/mewlips/nx-remote-controller-mod/blob/master/NXRemoteController.apk
+* Insert the SD card into your camera and power up the camera.
+
+* Wait. The installation will be completed soon.
+
+### Android
+- Install the https://github.com/mewlips/nx-remote-controller-mod/blob/master/NXRemoteController.apk
 
 ## How To Use
 
