@@ -55,6 +55,8 @@ static void print_error(const char *msg)
 #define XWD_SKIP_BYTES 3179
 #define DISCOVERY_PACKET_SIZE 32
 
+#define POPUP_TIMEOUT_SH_COMMAND "/opt/usr/apps/nx-remote-controller-mod/popup_timeout.sh"
+
 static off_t s_addrs[] = {
     0xbbaea500,
     0xbbb68e00,
@@ -346,6 +348,28 @@ static void *start_xwin_capture(StreamerData *data)
     return NULL;
 }
 
+static void run_command(char *command_line)
+{
+    pid_t pid = fork();
+    if (pid == 0) { // child
+        log("execvp(), %s", command_line);
+#define MAX_ARGS 63
+        int argc = 0;
+        char *argv[MAX_ARGS + 1];
+        char *p = strtok(command_line, " ");
+        while (p && argc < MAX_ARGS) {
+            argv[argc++] = p;
+            p = strtok(NULL, " ");
+        }
+        argv[argc] = NULL;
+        execvp(argv[0], argv);
+    } else if (pid > 0) {
+        // parent. do nothing
+    } else {
+        print_error("fork() failed!");
+    }
+}
+
 static void *start_executor(StreamerData *data)
 {
     FILE *client_sock;
@@ -377,24 +401,7 @@ static void *start_executor(StreamerData *data)
 
         if (strlen(command_line) > 0 && command_line[0] == '@') {
             // run command in background and no output return
-            pid_t pid = fork();
-            if (pid == 0) { // child
-                log("execv(), %s", command_line + 1);
-#define MAX_ARGS 63
-                int argc = 0;
-                char *argv[MAX_ARGS + 1];
-                char *p2 = strtok(command_line + 1, " ");
-                while (p2 && argc < MAX_ARGS) {
-                    argv[argc++] = p2;
-                    p2 = strtok(NULL, " ");
-                }
-                argv[argc] = NULL;
-                execvp(argv[0], argv);
-            } else if (pid > 0) {
-                // parent. do nothing
-            } else {
-                print_error("fork() failed!");
-            }
+            run_command(command_line + 1);
         } else if (strlen(command_line) > 0 && command_line[0] == '$') {
             // run command in foreground and return output
             log("command = %s", command_line);
@@ -559,6 +566,7 @@ static void broadcast_discovery_packet(const int port,
     int broadcast_enable = 1;
     int ret;
     struct sockaddr_in sin;
+    bool need_show_disconnected_msg = false;
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == -1) {
@@ -579,6 +587,14 @@ static void broadcast_discovery_packet(const int port,
     while (true) {
         if (*socket_connect_count == 0) {
             char msg[DISCOVERY_PACKET_SIZE] = {0,};
+            char command_line[256];
+            strncpy(command_line, POPUP_TIMEOUT_SH_COMMAND 
+                    " 3 NXRemoteController disconnected.", 256);
+
+            if (need_show_disconnected_msg) {
+                run_command(command_line);
+                need_show_disconnected_msg = false;
+            }
 
             log("broadcasting discovery packet...");
             strncpy(msg, "NX_REMOTE|1.0.0|NX500|", sizeof(msg)); // HEADER|VERSION|MODEL|
@@ -588,6 +604,8 @@ static void broadcast_discovery_packet(const int port,
                 print_error("sendto() failed");
                 break;
             }
+        } else {
+            need_show_disconnected_msg = true;
         }
         sleep(1);
     }
