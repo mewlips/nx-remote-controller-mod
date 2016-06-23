@@ -377,8 +377,24 @@ static void *start_executor(StreamerData *data)
 
         if (strlen(command_line) > 0 && command_line[0] == '@') {
             // run command in background and no output return
-            printf("%s\n", command_line + 1);
-            fflush(stdout);
+            pid_t pid = fork();
+            if (pid == 0) { // child
+                log("execv(), %s", command_line + 1);
+#define MAX_ARGS 63
+                int argc = 0;
+                char *argv[MAX_ARGS + 1];
+                char *p2 = strtok(command_line + 1, " ");
+                while (p2 && argc < MAX_ARGS) {
+                    argv[argc++] = p2;
+                    p2 = strtok(NULL, " ");
+                }
+                argv[argc] = NULL;
+                execvp(argv[0], argv);
+            } else if (pid > 0) {
+                // parent. do nothing
+            } else {
+                print_error("fork() failed!");
+            }
         } else if (strlen(command_line) > 0 && command_line[0] == '$') {
             // run command in foreground and return output
             log("command = %s", command_line);
