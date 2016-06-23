@@ -3,7 +3,7 @@
     package="com.mewlips.nxremote">
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-feature android:name="android.hardware.screen.portrait" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 
     <application
         android:allowBackup="true"

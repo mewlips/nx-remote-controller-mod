@@ -1,6 +1,7 @@
 package com.mewlips.nxremote;
 
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
@@ -11,6 +12,9 @@ import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.design.widget.NavigationView;
@@ -40,6 +44,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -67,10 +72,13 @@ public class MainActivity extends AppCompatActivity
     private static final int VIDEO_SIZE_UHD = 1;
     private static final int VIDEO_SIZE_VGA = 2;
 
+    private static final String APP_PATH = "/opt/usr/apps/nx-remote-controller-mod";
     private static final String XDOTOOL_COMMAND
-            = "@chroot /opt/usr/apps/nx-remote-controller-mod/tools /usr/bin/xdotool";
+            = "@chroot " + APP_PATH + "/tools /usr/bin/xdotool";
     private static final String MOD_GUI_COMMAND
             = "@/opt/usr/nx-on-wake/mod_gui /opt/usr/nx-on-wake/main";
+    private static final String POPUP_TIMEOUT_SH_COMMAND
+            = "@" + APP_PATH + "/popup_timeout.sh";
     private static final String GET_HEVC_STATE_COMMAND
             = "$cat /sys/kernel/debug/pmu/hevc/state";
     private static final String GET_MOV_SIZE_COMMAND_NX500
@@ -287,6 +295,8 @@ public class MainActivity extends AppCompatActivity
                 return;
             }
 
+            execute(POPUP_TIMEOUT_SH_COMMAND + " 3 Connected to " + Build.MODEL +
+                    " (" + getWifiIpAddress() + ")");
             setRemoteControlState(true);
 
             Timer timer = new Timer();
@@ -397,6 +407,15 @@ public class MainActivity extends AppCompatActivity
                 mBlockingQueue.add(command);
             }
         }
+    }
+
+    private String getWifiIpAddress() {
+        WifiManager wifiMan = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInf = wifiMan.getConnectionInfo();
+        int ipAddress = wifiInf.getIpAddress();
+        return String.format(Locale.ENGLISH, "%d.%d.%d.%d",
+                (ipAddress & 0xff),(ipAddress >> 8 & 0xff),
+                (ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
     }
 
     private void onRecordStarted() {
