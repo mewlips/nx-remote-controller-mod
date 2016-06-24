@@ -17,6 +17,7 @@ tar_tools() {
         usr/bin/strace \
         usr/bin/xdotool  \
         usr/bin/xev  \
+        usr/bin/xwininfo \
         usr/lib/libX11.so.6 \
         usr/lib/libXau.so.6 \
         usr/lib/libXdmcp.so.6 \
@@ -27,6 +28,7 @@ tar_tools() {
         usr/lib/libXrender.so.1 \
         usr/lib/libXtst.so.6 \
         usr/lib/libxcb.so.1 \
+        usr/lib/libxcb-shape.so.0 \
         usr/lib/libxdo.so.3 \
         usr/lib/libxkbcommon.so.0
     popd

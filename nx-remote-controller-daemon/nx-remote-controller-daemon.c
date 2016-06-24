@@ -55,7 +55,9 @@ static void print_error(const char *msg)
 #define XWD_SKIP_BYTES 3179
 #define DISCOVERY_PACKET_SIZE 32
 
-#define POPUP_TIMEOUT_SH_COMMAND "/opt/usr/apps/nx-remote-controller-mod/popup_timeout.sh"
+#define APP_PATH "/opt/usr/apps/nx-remote-controller-mod"
+#define POPUP_TIMEOUT_SH_COMMAND APP_PATH "/popup_timeout.sh"
+#define LCD_CONTROL_SH_COMMAND APP_PATH "/lcd_control.sh"
 
 static off_t s_addrs[] = {
     0xbbaea500,
@@ -381,6 +383,7 @@ static void *start_executor(StreamerData *data)
     size_t read_size;
     size_t write_size;
     unsigned long size;
+    FILE *hevc = NULL;
 
     client_sock = fdopen(data->client_fd, "r");
     if (client_sock == NULL) {
@@ -395,6 +398,12 @@ static void *start_executor(StreamerData *data)
     }
 
     log("executor started.");
+
+    hevc = fopen("/sys/kernel/debug/pmu/hevc/state", "r");
+    if (hevc == NULL) {
+        print_error("fopen() failed");
+        goto error;
+    }
 
     while (fgets(command_line, sizeof(command_line), client_sock)) {
         command_line[strlen(command_line) - 1] = '\0'; // strip '\n' at end
@@ -441,6 +450,31 @@ static void *start_executor(StreamerData *data)
         } else if (strncmp("xfps=", command_line, 5) == 0) {
             s_xwin_fps = atoi(command_line+5);
             fprintf(stderr, "xwin fps = %d\n", s_xwin_fps);
+        } else if (strncmp("lcd=on", command_line, 6) == 0) {
+            system(LCD_CONTROL_SH_COMMAND " on");
+        } else if (strncmp("lcd=off", command_line, 7) == 0) {
+            system(LCD_CONTROL_SH_COMMAND " off");
+        } else if (strncmp("get_hevc_state", command_line, 14) == 0) {
+            clearerr(hevc);
+            rewind(hevc);
+            memset(buf, 0, sizeof(buf));
+            read_size = fread(buf, 1, sizeof(buf), hevc);
+            if (ferror(hevc) != 0) {
+                log("ferror()");
+            } else if (feof(hevc) != 0) {
+                log("read_size = %d, buf = %s", read_size, buf);
+                size = htonl(read_size);
+                write_size = write(client_fd, (const void *)&size, 4);
+                if (write_size == -1) {
+                    print_error("write() failed!");
+                    goto error;
+                }
+                write_size = write(client_fd, buf, read_size);
+                if (write_size == -1) {
+                    print_error("write() failed!");
+                    goto error;
+                }
+            }
         }
 
         // EOF
@@ -458,6 +492,11 @@ static void *start_executor(StreamerData *data)
     }
 
 error:
+    if (hevc != NULL) {
+        if (fclose(hevc) == EOF) {
+            print_error("fclose() failed!");
+        }
+    }
     if (out != NULL) {
         if (pclose(out) == -1) {
             print_error("pclose() failed!");

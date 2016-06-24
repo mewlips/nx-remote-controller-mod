@@ -80,9 +80,12 @@ public class MainActivity extends AppCompatActivity
     private static final String POPUP_TIMEOUT_SH_COMMAND
             = "@" + APP_PATH + "/popup_timeout.sh";
     private static final String GET_HEVC_STATE_COMMAND
-            = "$cat /sys/kernel/debug/pmu/hevc/state";
+            = "get_hevc_state";
+            //= "$cat /sys/kernel/debug/pmu/hevc/state";
     private static final String GET_MOV_SIZE_COMMAND_NX500
             = "$prefman get 0 0x0000a360 l";
+    private static final String LCD_OFF_COMMAND = "lcd=off";
+    private static final String LCD_ON_COMMAND = "lcd=on";
 
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
@@ -121,6 +124,8 @@ public class MainActivity extends AppCompatActivity
     private boolean mOnRecord;
 
     private int mVideoSize = 0;
+
+    private boolean mIsLcdOn = true;
 
     private class VideoPlayer implements Runnable {
         private byte[] mBuffer = new byte[FRAME_VIDEO_SIZE];
@@ -596,17 +601,29 @@ public class MainActivity extends AppCompatActivity
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
                         mSkipCount = SKIP_MOUSE_MOVE_COUNT;
-                        runCommand(command + "mousemove " + x + " " + y + " mousedown 1");
+                        if (mIsLcdOn) {
+                            runCommand(command + "mousemove " + x + " " + y + " mousedown 1");
+                        } else {
+                            runCommand(command + "mousemove " + SEND_TO_DI_CAMERA_APP + x + " " + y + " mousedown " + SEND_TO_DI_CAMERA_APP + "1");
+                        }
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         mSkipCount--;
                         if (mSkipCount == 0) {
-                            runCommand(command + "mousemove " + x + " " + y);
+                            if (mIsLcdOn) {
+                                runCommand(command + "mousemove " + x + " " + y);
+                            } else {
+                                runCommand(command + "mousemove " + SEND_TO_DI_CAMERA_APP + x + " " + y);
+                            }
                             mSkipCount = SKIP_MOUSE_MOVE_COUNT;
                         }
                         return true;
                     case MotionEvent.ACTION_UP:
-                        runCommand(command + "mousemove " + x + " " + y + " mouseup 1");
+                        if (mIsLcdOn) {
+                            runCommand(command + "mousemove " + x + " " + y + " mouseup 1");
+                        } else {
+                            runCommand(command + "mousemove " + SEND_TO_DI_CAMERA_APP + x + " " + y + " mouseup " + SEND_TO_DI_CAMERA_APP + "1");
+                        }
                         break;
                 }
                 return false;
@@ -801,10 +818,18 @@ public class MainActivity extends AppCompatActivity
                 int action = event.getAction() & MotionEvent.ACTION_MASK;
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
-                        runCommand(XDOTOOL_COMMAND + " keydown " + KEY_EV);
+                        if (mIsLcdOn) {
+                            runCommand(XDOTOOL_COMMAND + " keydown " + KEY_EV);
+                        } else {
+                            runCommand(XDOTOOL_COMMAND + " keydown " + SEND_TO_DI_CAMERA_APP + KEY_EV);
+                        }
                         return true;
                     case MotionEvent.ACTION_UP:
-                        runCommand(XDOTOOL_COMMAND + " keyup " + KEY_EV);
+                        if (mIsLcdOn) {
+                            runCommand(XDOTOOL_COMMAND + " keyup " + KEY_EV);
+                        } else {
+                            runCommand(XDOTOOL_COMMAND + " keyup " + SEND_TO_DI_CAMERA_APP + KEY_EV);
+                        }
                         break;
                     default:
                         return true;
@@ -918,9 +943,11 @@ public class MainActivity extends AppCompatActivity
             mImageViewVideo.setVisibility(View.INVISIBLE);
             mImageViewXWin.setVisibility(View.INVISIBLE);
         } else if (id == R.id.nav_lcd_on) {
-            runCommand("@st app bb lcd on");
+            runCommand(LCD_ON_COMMAND);
+            mIsLcdOn = true;
         } else if (id == R.id.nav_lcd_off) {
-            runCommand("@st app bb lcd off");
+            runCommand(LCD_OFF_COMMAND);
+            mIsLcdOn = false;
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -1173,16 +1200,30 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private static final String SEND_TO_DI_CAMERA_APP = "--window 0xe00002 ";
+
     private void keyDown(String key) {
-        runCommand(XDOTOOL_COMMAND + " keydown " + key);
+        if (mIsLcdOn) {
+            runCommand(XDOTOOL_COMMAND + " keydown " + key);
+        } else {
+            runCommand(XDOTOOL_COMMAND + " keydown " + SEND_TO_DI_CAMERA_APP + key);
+        }
     }
 
     private void keyUp(String key) {
-        runCommand(XDOTOOL_COMMAND + " keyup " + key);
+        if (mIsLcdOn) {
+            runCommand(XDOTOOL_COMMAND + " keyup " + key);
+        } else {
+            runCommand(XDOTOOL_COMMAND + " keyup " + SEND_TO_DI_CAMERA_APP + key);
+        }
     }
 
     private void keyClick(String key) {
-        runCommand(XDOTOOL_COMMAND + " key " + key);
+        if (mIsLcdOn) {
+            runCommand(XDOTOOL_COMMAND + " key " + key);
+        } else {
+            runCommand(XDOTOOL_COMMAND + " key " + SEND_TO_DI_CAMERA_APP + key);
+        }
     }
 
     private class TextDrawable extends Drawable {
