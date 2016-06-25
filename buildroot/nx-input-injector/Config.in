@@ -1,0 +1,5 @@
+config BR2_PACKAGE_NX_INPUT_INJECTOR
+	bool "nx-input-injector"
+	select BR2_PACKAGE_XDOTOOL_NX
+	help
+	  X input events injection utiliity

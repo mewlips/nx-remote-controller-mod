@@ -1,0 +1,10 @@
+--- buildroot-2016.05/package/Config.in	2016-06-26 00:03:22.720716094 +0900
++++ buildroot-2016.05.old/package/Config.in	2016-06-26 09:04:20.090061752 +0900
+@@ -318,6 +318,7 @@
+ 	source "package/yad/Config.in"
+ 	source "package/xdotool-nx/Config.in"
+ 	source "package/xev-nx/Config.in"
++        source "package/nx-input-injector/Config.in"
+ 
+ comment "X libraries and helper libraries"
+ 	source "package/libsexy/Config.in"

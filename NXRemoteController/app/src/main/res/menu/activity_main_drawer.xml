@@ -1,39 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:title="Remote View">
+    <item android:title="Camera Screen / Mobile Screen">
         <menu>
             <group android:checkableBehavior="single">
                 <item
-                    android:id="@+id/nav_full_remote"
+                    android:id="@+id/nav_lv_osd_lv_osd"
                     android:icon="@drawable/ic_menu_camera"
-                    android:title="Camera GUI + LiveView" />
+                    android:title="Video+OSD / Video+OSD" />
                 <item
-                    android:id="@+id/nav_without_live_view"
-                    android:icon="@drawable/ic_menu_gallery"
-                    android:title="Camera GUI" />
+                    android:id="@+id/nav_lv_osd_lv"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="Video+OSD / Video" />
                 <item
-                    android:id="@+id/nav_live_view_only"
-                    android:icon="@drawable/ic_menu_slideshow"
-                    android:title="LiveView" />
+                    android:id="@+id/nav_lv_osd_osd"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="Video+OSD / OSD" />
                 <item
-                    android:id="@+id/nav_buttons_only"
-                    android:icon="@drawable/ic_menu_manage"
-                    android:title="Buttons only" />
+                    android:id="@+id/nav_lv_osd_off"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="Video+OSD / OFF" />
+                <item
+                    android:id="@+id/nav_lv_lv"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="Video / Video" />
+                <item
+                    android:id="@+id/nav_lv_off"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="Video / OFF" />
+                <item
+                    android:id="@+id/nav_off_lv"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="OFF / Video" />
+                <item
+                    android:id="@+id/nav_off_off"
+                    android:icon="@drawable/ic_menu_camera"
+                    android:title="OFF / OFF" />
             </group>
         </menu>
     </item>
 
-    <item android:title="Camera Control">
+    <item android:title="NXRemoteController">
         <menu>
             <item
-                android:id="@+id/nav_lcd_on"
-                android:icon="@drawable/ic_menu_share"
-                android:title="LCD ON" />
+                android:id="@+id/nav_camera_screen_liveview"
+                android:icon="@drawable/ic_menu_manage"
+                android:title="Settings" />
             <item
-                android:id="@+id/nav_lcd_off"
+                android:id="@+id/nav_camera_screen_off"
                 android:icon="@drawable/ic_menu_send"
-                android:title="LCD OFF" />
+                android:title="About" />
         </menu>
     </item>
 

@@ -96,7 +96,7 @@
             app:wheelOffsetY="50dp"
             app:repeatItems="true"
             app:wheelRadius="50dp"
-            app:wheelItemCount="8"
+            app:wheelItemCount="9"
             app:wheelPadding="0dp"
             app:wheelItemRadius="14dp"/>
 
@@ -139,12 +139,8 @@
             <TextView
                 android:id="@+id/keyRec"
                 style="@style/modeButton"
-                android:textColor="#FF0000"
+                android:textColor="@color/colorRecButtonTextNormal"
                 android:text="Rec." />
-            <TextView
-                android:id="@+id/keyMod"
-                style="@style/modeButton"
-                android:text="MOD" />
         </GridLayout>
 
         <GridLayout

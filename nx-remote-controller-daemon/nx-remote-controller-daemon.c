@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -47,6 +48,7 @@ static void print_error(const char *msg)
 #define XWIN_NUM_SEGMENTS (FRAME_WIDTH * FRAME_HEIGHT / XWIN_SEGMENT_PIXELS)
 #define XWIN_FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 4)
 
+#define PORT_NOTIFY 5677
 #define PORT_VIDEO 5678
 #define PORT_XWIN 5679
 #define PORT_EXECUTOR 5680
@@ -58,6 +60,7 @@ static void print_error(const char *msg)
 #define APP_PATH "/opt/usr/apps/nx-remote-controller-mod"
 #define POPUP_TIMEOUT_SH_COMMAND APP_PATH "/popup_timeout.sh"
 #define LCD_CONTROL_SH_COMMAND APP_PATH "/lcd_control.sh"
+#define NX_INPUT_INJECTOR_COMMAND "chroot " APP_PATH "/tools nx-input-injector"
 
 static off_t s_addrs[] = {
     0xbbaea500,
@@ -91,6 +94,138 @@ typedef struct {
     OnConnect on_connect;
     int *socket_connect_count;
 } ListenSocketData;
+
+#define CHROOT_COMMAND \
+        "chroot /opt/usr/apps/nx-remote-controller-mod/tools "
+#define GET_DI_CAMERA_APP_WINDOW_ID_COMMAND \
+        "\"$(" CHROOT_COMMAND "xdotool search --class di-camera-app)\""
+#define XEV_NX_COMMAND \
+        CHROOT_COMMAND "xev-nx -p -id " \
+        GET_DI_CAMERA_APP_WINDOW_ID_COMMAND
+
+#define HEVC_STATE_UNKNOWN (-1)
+#define HEVC_STATE_OFF 0
+#define HEVC_STATE_ON  1
+
+static void *start_notify(StreamerData *data)
+{
+    int client_fd = data->client_fd;
+    FILE *xev_pipe = NULL;
+    char buf[256];
+    int xev_fd;
+    int flags;
+    size_t write_size;
+    pid_t xev_pid = 0;
+    FILE *hevc = NULL;
+    int hevc_state = HEVC_STATE_UNKNOWN;
+    char *line;
+    int count = 0;
+
+    free(data);
+
+    hevc = fopen("/sys/kernel/debug/pmu/hevc/state", "r");
+    if (hevc == NULL) {
+        print_error("fopen() failed");
+        goto error;
+    }
+
+    //log("xev-nx command = %s", XEV_NX_COMMAND);
+    xev_pipe = popen(XEV_NX_COMMAND, "r");
+    if (xev_pipe == NULL) {
+        print_error("popen() failed!");
+        goto error;
+    }
+
+    if (fgets(buf, sizeof(buf), xev_pipe) != NULL) {
+        sscanf(buf, "%d\n", &xev_pid);
+        log("xev-nx pid = %d", xev_pid);
+    } else {
+        log("failed get xev-nx pid.");
+        goto error;
+    }
+
+    xev_fd = fileno(xev_pipe);
+    flags = fcntl(xev_fd, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    fcntl(xev_fd, F_SETFL, flags);
+
+    while (true) {
+        // hevc check
+        clearerr(hevc);
+        rewind(hevc);
+        memset(buf, 0, sizeof(buf));
+        fread(buf, 1, sizeof(buf), hevc);
+        if (ferror(hevc) != 0) {
+            log("ferror()");
+        } else if (feof(hevc) != 0) {
+            //log("read_size = %d, buf = %s", read_size, buf);
+            if (strncmp(buf, "on", 2) == 0) {
+                if (hevc_state != HEVC_STATE_ON) {
+                    hevc_state = HEVC_STATE_ON;
+                    write_size = write(client_fd, "hevc=on\n", 8);
+                    if (write_size == -1) {
+                        print_error("write() failed!");
+                        goto error;
+                    }
+                }
+            } else if (strncmp(buf, "off", 3) == 0) {
+                if (hevc_state != HEVC_STATE_OFF) {
+                    hevc_state = HEVC_STATE_OFF;
+                    write_size = write(client_fd, "hevc=off\n", 9);
+                    if (write_size == -1) {
+                        print_error("write() failed!");
+                        goto error;
+                    }
+                }
+            }
+        }
+
+        // xev-nx
+        line = fgets(buf, sizeof(buf), xev_pipe);
+        if (line == NULL) {
+            if (errno == EWOULDBLOCK) {
+                errno = 0;
+                usleep(100*1000);
+            } else {
+                log("failed to read from xev_pipe.");
+                break;
+            }
+        } else {
+            write_size = write(client_fd, buf, strlen(buf));
+            if (write_size == -1) {
+                log("write() failed. write_size = %d", write_size);
+                break;
+            }
+            //log("buf = %s", buf);
+        }
+
+        // send ping
+        if (count % 10 == 0) {
+            write_size = write(client_fd, "ping\n", 5);
+            if (write_size == -1) {
+                log("write() failed. ping failed");
+                break;
+            }
+            count = 0;
+        }
+        count++;
+    }
+
+error:
+    if (hevc != NULL && fclose(hevc)) {
+        print_error("fclose() failed!");
+    }
+    if (xev_pid != 0 && kill(xev_pid, SIGKILL) == -1) {
+        print_error("kill() failed!");
+    }
+    if (xev_pipe != NULL && pclose(xev_pipe) == -1) {
+        //print_error("pclose() failed!");
+    }
+
+    log("notify finished.");
+
+    return NULL;
+}
 
 static void *mmap_lcd(const int fd, const off_t offset)
 {
@@ -254,7 +389,8 @@ static void *start_xwin_capture(StreamerData *data)
                                         ? skip_size : XWIN_BUF_SIZE,
                               xwd_out);
             if (read_size == 0) {
-                err = true;
+                //err = true;
+                log("xwd read_size = 0");
                 break;
             }
             skip_size -= read_size;
@@ -284,7 +420,7 @@ static void *start_xwin_capture(StreamerData *data)
                         }
                     }
 
-                    if (hashs[hash_index] == hash) {
+                    if (hash_index != 0 && hashs[hash_index] == hash) {
                         skip_count++;
                     } else {
                         hashs[hash_index] = hash;
@@ -309,7 +445,7 @@ static void *start_xwin_capture(StreamerData *data)
                             break;
                         }
 
-                        if (skip_count != 1080) {
+                        if (skip_count != 1080 - 1) {
                             log("[XWinCapture] count = %d, skip_count = %d",
                                 count, skip_count);
                         }
@@ -324,8 +460,8 @@ static void *start_xwin_capture(StreamerData *data)
         }
 
         if (pclose(xwd_out) == -1) {
-            print_error("pclose() failed");
-            err = true;
+            //print_error("pclose() failed");
+            //err = true;
         }
 
         end_time = get_current_time();
@@ -378,12 +514,12 @@ static void *start_executor(StreamerData *data)
     int client_fd = data->client_fd;;
     char command_line[256];
     bool err = false;
-    FILE *out = NULL;
+    FILE *command_pipe = NULL;
     char buf[1024];
     size_t read_size;
     size_t write_size;
     unsigned long size;
-    FILE *hevc = NULL;
+    FILE *inject_input_pipe = NULL;
 
     client_sock = fdopen(data->client_fd, "r");
     if (client_sock == NULL) {
@@ -399,9 +535,9 @@ static void *start_executor(StreamerData *data)
 
     log("executor started.");
 
-    hevc = fopen("/sys/kernel/debug/pmu/hevc/state", "r");
-    if (hevc == NULL) {
-        print_error("fopen() failed");
+    inject_input_pipe = popen(NX_INPUT_INJECTOR_COMMAND, "w");
+    if (inject_input_pipe == NULL) {
+        print_error("pope() failed");
         goto error;
     }
 
@@ -415,14 +551,14 @@ static void *start_executor(StreamerData *data)
             // run command in foreground and return output
             log("command = %s", command_line);
 
-            out = popen(command_line + 1, "r");
-            if (out == NULL) {
+            command_pipe = popen(command_line + 1, "r");
+            if (command_pipe == NULL) {
                 print_error("popen() failed");
                 continue;
             }
 
-            while (feof(out) == 0 && ferror(out) == 0) {
-                read_size = fread(buf, 1, sizeof(buf), out);
+            while (feof(command_pipe) == 0 && ferror(command_pipe) == 0) {
+                read_size = fread(buf, 1, sizeof(buf), command_pipe);
                 if (read_size == 0) {
                     break;
                 } else if (read_size < 0 || read_size > sizeof(buf)) {
@@ -444,6 +580,9 @@ static void *start_executor(StreamerData *data)
                     read_size -= write_size;
                 }
             }
+        } else if (strncmp("inject_input=", command_line, 13) == 0) {
+            fprintf(inject_input_pipe, "%s\n", command_line + 13);
+            fflush(inject_input_pipe);
         } else if (strncmp("vfps=", command_line, 5) == 0) {
             s_video_fps = atoi(command_line+5);
             fprintf(stderr, "video fps = %d\n", s_video_fps);
@@ -454,27 +593,12 @@ static void *start_executor(StreamerData *data)
             system(LCD_CONTROL_SH_COMMAND " on");
         } else if (strncmp("lcd=off", command_line, 7) == 0) {
             system(LCD_CONTROL_SH_COMMAND " off");
-        } else if (strncmp("get_hevc_state", command_line, 14) == 0) {
-            clearerr(hevc);
-            rewind(hevc);
-            memset(buf, 0, sizeof(buf));
-            read_size = fread(buf, 1, sizeof(buf), hevc);
-            if (ferror(hevc) != 0) {
-                log("ferror()");
-            } else if (feof(hevc) != 0) {
-                log("read_size = %d, buf = %s", read_size, buf);
-                size = htonl(read_size);
-                write_size = write(client_fd, (const void *)&size, 4);
-                if (write_size == -1) {
-                    print_error("write() failed!");
-                    goto error;
-                }
-                write_size = write(client_fd, buf, read_size);
-                if (write_size == -1) {
-                    print_error("write() failed!");
-                    goto error;
-                }
-            }
+        } else if (strncmp("lcd=video", command_line, 9) == 0) {
+            system(LCD_CONTROL_SH_COMMAND " video");
+        } else if (strncmp("lcd=osd", command_line, 7) == 0) {
+            system(LCD_CONTROL_SH_COMMAND " osd");
+        } else if (strncmp("ping", command_line, 4) == 0) {
+            // do nothing
         }
 
         // EOF
@@ -485,23 +609,24 @@ static void *start_executor(StreamerData *data)
             goto error;
         }
 
-        if (out != NULL && pclose(out) == -1) {
-            print_error("pclose() failed!");
+        if (command_pipe != NULL && pclose(command_pipe) == -1) {
+            //print_error("pclose() failed!");
         }
-        out = NULL;
+        command_pipe = NULL;
     }
 
 error:
-    if (hevc != NULL) {
-        if (fclose(hevc) == EOF) {
-            print_error("fclose() failed!");
+    if (command_pipe != NULL) {
+        if (pclose(command_pipe) == -1) {
+            //print_error("pclose() failed!");
         }
     }
-    if (out != NULL) {
-        if (pclose(out) == -1) {
-            print_error("pclose() failed!");
+    if (inject_input_pipe != NULL) {
+        if (pclose(inject_input_pipe) == -1) {
+            //print_error("pclose() failed!");
         }
     }
+
     log("executor finished.");
     return NULL;
 }
@@ -557,7 +682,7 @@ static void *listen_socket_func(void *thread_data)
 
         data->server_fd = server_fd;
         data->client_fd = client_fd;
-        data->fps = 5; // TODO
+        data->fps = 5;
 
         (*socket_connect_count)++;
         if (pthread_create(&thread, NULL,
@@ -636,7 +761,8 @@ static void broadcast_discovery_packet(const int port,
             }
 
             log("broadcasting discovery packet...");
-            strncpy(msg, "NX_REMOTE|1.0.0|NX500|", sizeof(msg)); // HEADER|VERSION|MODEL|
+            // TODO: get camera model
+            strncpy(msg, "NX_REMOTE|1.0|NX500|", sizeof(msg)); // HEADER|VERSION|MODEL|
 
             if (sendto(sock, msg, sizeof(msg), 0, (struct sockaddr *)&sin,
                        sizeof(struct sockaddr_in)) == -1) {
@@ -659,7 +785,9 @@ int main(int argc, char **argv)
     int socket_connect_count = 0;
 
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
 
+    listen_socket(PORT_NOTIFY, start_notify, &socket_connect_count);
     listen_socket(PORT_VIDEO, start_video_capture, &socket_connect_count);
     listen_socket(PORT_XWIN, start_xwin_capture, &socket_connect_count);
     listen_socket(PORT_EXECUTOR, start_executor, &socket_connect_count);

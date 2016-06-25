@@ -1,0 +1,7 @@
+config BR2_PACKAGE_XEV_NX
+	bool "xev-nx"
+	select BR2_PACKAGE_XLIB_LIBX11
+	select BR2_PACKAGE_XLIB_LIBXRANDR
+	select BR2_PACKAGE_XDOTOOL_NX
+	help
+	  print contents of X events

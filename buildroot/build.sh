@@ -14,9 +14,10 @@ tar_tools() {
         lib/libm.so.6 \
         lib/libpthread.so.0 \
         lib/librt.so.1 \
+        usr/bin/nx-input-injector \
         usr/bin/strace \
         usr/bin/xdotool  \
-        usr/bin/xev  \
+        usr/bin/xev-nx  \
         usr/bin/xwininfo \
         usr/lib/libX11.so.6 \
         usr/lib/libXau.so.6 \
@@ -38,6 +39,11 @@ wget -c https://buildroot.org/downloads/$TARBALL
 
 if [ -f $TARBALL ] && [ ! -d $BUILDROOT_DIR ]; then
     tar -xjf $TARBALL
+    (cd $BUILDROOT_DIR/package; ln -s ../../xev-nx)
+    (cd $BUILDROOT_DIR/package; ln -s ../../xdotool-nx)
+    (cd $BUILDROOT_DIR/package; ln -s ../../nx-input-injector)
+    (cd $BUILDROOT_DIR; patch -p1 < ../patch-001-libxdo-xev-nx.patch)
+    (cd $BUILDROOT_DIR; patch -p1 < ../patch-002-nx-input-injector.patch)
 fi
 
 cp -fv nx_remote_controller_mod_defconfig $BUILDROOT_DIR/configs

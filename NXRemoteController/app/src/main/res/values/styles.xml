@@ -13,7 +13,10 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:actionBarSize">36dp</item>
+        <item name="actionBarSize">36dp</item>
+    </style>
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
@@ -22,15 +25,15 @@
         <item name="android:layout_height">40dp</item>
         <item name="android:layout_marginBottom">10dp</item>
         <item name="android:layout_marginRight">10dp</item>
-        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColor">@color/colorKeypadButtonTextNormal</item>
         <item name="android:gravity">center</item>
         <item name="android:background">@drawable/circle</item>
         <item name="android:onClick">onButtonClick</item>
     </style>
 
     <style name="keypadButton" parent="@android:style/TextAppearance.Small">
-        <item name="android:layout_width">90dp</item>
-        <item name="android:layout_height">50dp</item>
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">45dp</item>
         <item name="android:textColor">#FFFFFF</item>
         <item name="android:gravity">center</item>
         <item name="android:background">@drawable/rectangle</item>

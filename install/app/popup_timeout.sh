@@ -9,4 +9,4 @@ args=""
 for arg in "$@"; do
     args+=" $arg"
 done
-$POPUP_TIMEOUT "$args" $timeout
+$POPUP_TIMEOUT "$args" $timeout &
