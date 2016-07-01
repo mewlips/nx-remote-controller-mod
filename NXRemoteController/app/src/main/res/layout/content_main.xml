@@ -25,6 +25,14 @@
             android:layout_height="wrap_content"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter" />
+        <TextView
+            android:id="@+id/textViewStatus"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#00000000"
+            android:gravity="center_horizontal"
+            android:textSize="30dp"
+            android:textColor="#ffff00" />
     </FrameLayout>
     <ImageView
         android:id="@+id/imageViewXWin"
@@ -188,30 +196,5 @@
                 android:text="Del" />
         </GridLayout>
     </LinearLayout>
-
-    <RelativeLayout
-        android:id="@+id/layoutWifiInfo"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#80FFFFFF">
-
-        <TextView
-            android:id="@+id/textViewInfo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <Button
-            android:id="@+id/buttonWifiSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/textViewInfo"
-            android:text="@string/open_wifi_settings"/>
-        <Button
-            android:id="@+id/buttonHotSpotSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/buttonWifiSettings"
-            android:text="@string/open_hot_spot_settings" />
-    </RelativeLayout>
 
 </RelativeLayout>

@@ -58,9 +58,24 @@ static void print_error(const char *msg)
 #define DISCOVERY_PACKET_SIZE 32
 
 #define APP_PATH "/opt/usr/apps/nx-remote-controller-mod"
+//#define APP_PATH "/opt/storage/sdcard/remote"
 #define POPUP_TIMEOUT_SH_COMMAND APP_PATH "/popup_timeout.sh"
 #define LCD_CONTROL_SH_COMMAND APP_PATH "/lcd_control.sh"
 #define NX_INPUT_INJECTOR_COMMAND "chroot " APP_PATH "/tools nx-input-injector"
+
+#define CHROOT_COMMAND \
+        "chroot " APP_PATH "/tools "
+#define GET_DI_CAMERA_APP_WINDOW_ID_COMMAND \
+        "\"$(" CHROOT_COMMAND "xdotool search --class di-camera-app)\""
+#define XEV_NX_COMMAND \
+        CHROOT_COMMAND "xev-nx -p -id " \
+        GET_DI_CAMERA_APP_WINDOW_ID_COMMAND
+
+#define HEVC_STATE_UNKNOWN (-1)
+#define HEVC_STATE_OFF 0
+#define HEVC_STATE_ON  1
+
+#define PING_TIMEOUT_MS 5000
 
 static off_t s_addrs[] = {
     0xbbaea500,
@@ -95,17 +110,28 @@ typedef struct {
     int *socket_connect_count;
 } ListenSocketData;
 
-#define CHROOT_COMMAND \
-        "chroot /opt/usr/apps/nx-remote-controller-mod/tools "
-#define GET_DI_CAMERA_APP_WINDOW_ID_COMMAND \
-        "\"$(" CHROOT_COMMAND "xdotool search --class di-camera-app)\""
-#define XEV_NX_COMMAND \
-        CHROOT_COMMAND "xev-nx -p -id " \
-        GET_DI_CAMERA_APP_WINDOW_ID_COMMAND
+static char *get_port_name(int port)
+{
+    switch (port) {
+        case PORT_VIDEO:
+            return "video";
+        case PORT_XWIN:
+            return "xwin";
+        case PORT_NOTIFY:
+            return "notify";
+        case PORT_EXECUTOR:
+            return "executor";
+        case PORT_UDP_BROADCAST:
+            return "discovery";
+    }
 
-#define HEVC_STATE_UNKNOWN (-1)
-#define HEVC_STATE_OFF 0
-#define HEVC_STATE_ON  1
+    return "unknown";
+}
+
+static bool s_video_socket_closed_notify;
+static bool s_xwin_socket_closed_notify;
+static bool s_executor_socket_closed_notify;
+static bool s_video_socket_close_request;
 
 static void *start_notify(StreamerData *data)
 {
@@ -199,6 +225,36 @@ static void *start_notify(StreamerData *data)
             //log("buf = %s", buf);
         }
 
+        if (s_video_socket_closed_notify) {
+            char msg[] = "socket_closed=video\n";
+            write_size = write(client_fd, msg, strlen(msg));
+            if (write_size == -1) {
+                log("write() failed!");
+                break;
+            }
+            s_video_socket_closed_notify = false;
+        }
+
+        if (s_xwin_socket_closed_notify) {
+            char msg[] = "socket_closed=xwin\n";
+            write_size = write(client_fd, msg, strlen(msg));
+            if (write_size == -1) {
+                log("write() failed!");
+                break;
+            }
+            s_video_socket_closed_notify = false;
+        }
+
+        if (s_executor_socket_closed_notify) {
+            char msg[] = "socket_closed=executor\n";
+            write_size = write(client_fd, msg, strlen(msg));
+            if (write_size == -1) {
+                log("write() failed!");
+                break;
+            }
+            s_executor_socket_closed_notify = false;
+        }
+
         // send ping
         if (count % 10 == 0) {
             write_size = write(client_fd, "ping\n", 5);
@@ -264,7 +320,6 @@ static void *start_video_capture(StreamerData *data)
     int fd;
     void *addrs[S_ADDRS_SIZE];
     int hashs[S_ADDRS_SIZE] = {0,};
-    int count;
     int i, j, hash;
     long long start_time, end_time, time_diff;
     long long frame_time = 1000ll / (long)s_video_fps;
@@ -287,9 +342,14 @@ static void *start_video_capture(StreamerData *data)
 #ifdef DEBUG
     capture_start_time = get_current_time();
 #endif
-    count = 0;
+    s_video_socket_close_request = false;
     while (true) {
         start_time = get_current_time();
+
+        if (s_video_socket_close_request) {
+            s_video_socket_close_request = false;
+            break;
+        }
 
         for (i = 0; i < S_ADDRS_SIZE; i++) {
             const char *p = addrs[i];
@@ -304,11 +364,7 @@ static void *start_video_capture(StreamerData *data)
                     err = true;
                     break;
                 }
-                log("[VideoCapture] count = %d (%d), hash = %d (changed!)", count, i, hash);
-
-                count++;
-            } else {
-                //log("count = %d, hash = %d", count, hash);
+                //log("[VideoCapture] %d, hash = %d (changed!)", i, hash);
             }
 
             hashs[i] = hash;
@@ -321,7 +377,6 @@ static void *start_video_capture(StreamerData *data)
             //log("sleep %lld ms", frame_time - time_diff);
             usleep((frame_time - time_diff) * 1000);
         }
-        count++;
         frame_time = 1000ll / (long)s_video_fps;
 
         if (err) {
@@ -376,11 +431,12 @@ static void *start_xwin_capture(StreamerData *data)
     while (true) {
         start_time = get_current_time();
         hash = 0;
+        err = false;
 
         xwd_out = popen("xwd -root", "r");
         if (xwd_out == NULL) {
             print_error("popen() failed");
-            break;
+            continue;
         }
 
         skip_size = XWD_SKIP_BYTES;
@@ -389,12 +445,17 @@ static void *start_xwin_capture(StreamerData *data)
                                         ? skip_size : XWIN_BUF_SIZE,
                               xwd_out);
             if (read_size == 0) {
-                //err = true;
+                err = true;
                 log("xwd read_size = 0");
                 break;
             }
             skip_size -= read_size;
         } while (skip_size != 0);
+
+        if (err) {
+            pclose(xwd_out);
+            continue;
+        }
 
         if (skip_size == 0) {
             offset = 0;
@@ -520,6 +581,8 @@ static void *start_executor(StreamerData *data)
     size_t write_size;
     unsigned long size;
     FILE *inject_input_pipe = NULL;
+    long long last_ping_time;
+    int flags;
 
     client_sock = fdopen(data->client_fd, "r");
     if (client_sock == NULL) {
@@ -541,8 +604,25 @@ static void *start_executor(StreamerData *data)
         goto error;
     }
 
-    while (fgets(command_line, sizeof(command_line), client_sock)) {
-        command_line[strlen(command_line) - 1] = '\0'; // strip '\n' at end
+    flags = fcntl(client_fd, F_GETFL, 0);
+    flags |= O_NONBLOCK;
+    fcntl(client_fd, F_SETFL, flags);
+
+    last_ping_time = get_current_time();
+    while (true) {
+        if (fgets(command_line, sizeof(command_line), client_sock) == NULL) {
+            if (errno == EWOULDBLOCK) {
+                errno = 0;
+                usleep(50*1000);
+            } else {
+                break;
+            }
+        }
+        if (command_line[strlen(command_line) -1] == '\n') {
+            command_line[strlen(command_line) - 1] = '\0'; // strip '\n' at end
+        } else {
+            continue;
+        }
 
         if (strlen(command_line) > 0 && command_line[0] == '@') {
             // run command in background and no output return
@@ -598,7 +678,7 @@ static void *start_executor(StreamerData *data)
         } else if (strncmp("lcd=osd", command_line, 7) == 0) {
             system(LCD_CONTROL_SH_COMMAND " osd");
         } else if (strncmp("ping", command_line, 4) == 0) {
-            // do nothing
+            last_ping_time = get_current_time();
         }
 
         // EOF
@@ -611,8 +691,13 @@ static void *start_executor(StreamerData *data)
 
         if (command_pipe != NULL && pclose(command_pipe) == -1) {
             //print_error("pclose() failed!");
+            command_pipe = NULL;
         }
-        command_pipe = NULL;
+
+        if (last_ping_time < get_current_time() - PING_TIMEOUT_MS) {
+            log("executor ping not reached.");
+            goto error;
+        }
     }
 
 error:
@@ -672,13 +757,13 @@ static void *listen_socket_func(void *thread_data)
     while (true) {
         StreamerData *data = (StreamerData *)malloc(sizeof(StreamerData));
 
-        log("waiting client... port = %d", port);
+        log("waiting client... port = %d (%s)", port, get_port_name(port));
         client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &len);
         if (client_fd == -1) {
             die("accept() failed");
         }
 
-        log("client connected. port = %d", port);
+        log("client connected. port = %d (%s)", port, get_port_name(port));
 
         data->server_fd = server_fd;
         data->client_fd = client_fd;
@@ -693,11 +778,24 @@ static void *listen_socket_func(void *thread_data)
         if (pthread_join(thread, NULL)) {
             die("pthread_join() failed");
         }
-        (*socket_connect_count)--;
+
+        if (*socket_connect_count > 0) {
+            (*socket_connect_count)--;
+        }
 
         close(client_fd);
 
-        log("client closed. port = %d", port);
+        log("client closed. port = %d (%s)", port, get_port_name(port));
+        log("connected socket count = %d", *socket_connect_count);
+        if (port == PORT_VIDEO) {
+            s_video_socket_closed_notify = true;
+        } else if (port == PORT_XWIN) {
+            s_xwin_socket_closed_notify = true;
+        } else if (port == PORT_EXECUTOR) {
+            s_executor_socket_closed_notify = true;
+        } else if (port == PORT_NOTIFY) {
+            s_video_socket_close_request = true;
+        }
     }
 
     close(server_fd);
@@ -767,7 +865,6 @@ static void broadcast_discovery_packet(const int port,
             if (sendto(sock, msg, sizeof(msg), 0, (struct sockaddr *)&sin,
                        sizeof(struct sockaddr_in)) == -1) {
                 print_error("sendto() failed");
-                break;
             }
         } else {
             need_show_disconnected_msg = true;

@@ -5,11 +5,12 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
-    <string name="action_open_mod">MOD Menu</string>
 
     <string name="start">Start</string>
     <string name="stop">Stop</string>
 
-    <string name="open_wifi_settings">Open Wi-Fi Setting</string>
-    <string name="open_hot_spot_settings">Open Wi-Fi Hot-Spot Setting</string>
+    <string name="action_wifi_settings">Wi-Fi Setting</string>
+    <string name="action_hotspot_settings">Wi-Fi Hot-Spot Setting</string>
+
+    <string name="action_open_mod">nx-patch mod</string>
 </resources>

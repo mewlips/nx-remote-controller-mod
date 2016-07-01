@@ -48,4 +48,6 @@ fi
 
 cp -fv nx_remote_controller_mod_defconfig $BUILDROOT_DIR/configs
 cd $BUILDROOT_DIR
-make nx_remote_controller_mod_defconfig && make && tar_tools
+make nx_remote_controller_mod_defconfig && make && tar_tools && \
+    mkdir -p ../../sd_install/remote/tools && \
+    tar -C ../../sd_install/remote/tools -xf ../../install/app/tools.tar 

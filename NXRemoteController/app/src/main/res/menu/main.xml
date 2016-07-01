@@ -11,4 +11,14 @@
         android:orderInCategory="100"
         android:title="@string/action_settings"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_wifi_settings"
+        android:orderInCategory="100"
+        android:title="@string/action_wifi_settings"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_hotspot_settings"
+        android:orderInCategory="100"
+        android:title="@string/action_hotspot_settings"
+        app:showAsAction="never" />
 </menu>

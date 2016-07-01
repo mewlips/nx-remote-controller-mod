@@ -15,7 +15,6 @@ import android.graphics.drawable.Drawable;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.design.widget.NavigationView;
@@ -30,31 +29,66 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lukedeighton.wheelview.WheelView;
 import com.lukedeighton.wheelview.adapter.WheelAdapter;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+
+import static com.mewlips.nxremote.Configurations.FRAME_HEIGHT;
+import static com.mewlips.nxremote.Configurations.FRAME_WIDTH;
+import static com.mewlips.nxremote.Configurations.GET_MOV_SIZE_COMMAND_NX500;
+import static com.mewlips.nxremote.Configurations.INJECT_INPUT_COMMAND;
+import static com.mewlips.nxremote.Configurations.LCD_OFF_COMMAND;
+import static com.mewlips.nxremote.Configurations.LCD_ON_COMMAND;
+import static com.mewlips.nxremote.Configurations.LCD_VIDEO_COMMAND;
+import static com.mewlips.nxremote.Configurations.MOD_GUI_COMMAND_NX500;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_FHD_HD;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_NORMAL;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_UHD;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_VGA;
+import static com.mewlips.nxremote.NXKeys.KEY_AEL;
+import static com.mewlips.nxremote.NXKeys.KEY_DEL;
+import static com.mewlips.nxremote.NXKeys.KEY_DOWN;
+import static com.mewlips.nxremote.NXKeys.KEY_EV;
+import static com.mewlips.nxremote.NXKeys.KEY_FN;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CCW;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CW;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG_CCW;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG_CW;
+import static com.mewlips.nxremote.NXKeys.KEY_LEFT;
+import static com.mewlips.nxremote.NXKeys.KEY_MENU;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_A;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_A_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM2;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_M;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_M_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_P;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_P_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_S;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_S_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_OK;
+import static com.mewlips.nxremote.NXKeys.KEY_PB;
+import static com.mewlips.nxremote.NXKeys.KEY_REC;
+import static com.mewlips.nxremote.NXKeys.KEY_RIGHT;
+import static com.mewlips.nxremote.NXKeys.KEY_S1;
+import static com.mewlips.nxremote.NXKeys.KEY_S2;
+import static com.mewlips.nxremote.NXKeys.KEY_UP;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -62,612 +96,32 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = "MainActivity";
     private static final boolean DEBUG = true;
 
-    private static final int NOTIFY_PORT = 5677;
-    private static final int VIDEO_STREAMER_PORT = 5678;
-    private static final int XWIN_STREAMER_PORT = 5679;
-    private static final int EXECUTOR_PORT = 5680;
-    private static final int DISCOVERY_UDP_PORT = 5681;
-
-    private static final int FRAME_WIDTH = 720;
-    private static final int FRAME_HEIGHT = 480;
-    private static final int FRAME_VIDEO_SIZE = FRAME_WIDTH * FRAME_HEIGHT * 3 / 2; // NV12
-    private static final int XWIN_SEGMENT_NUM_PIXELS = 320;
-    private static final int XWIN_SEGMENT_SIZE = 2 + (XWIN_SEGMENT_NUM_PIXELS * 4); // 2 bytes (INDEX) + 320 pixels (BGRA)
-    private static final int DISCOVERY_PACKET_SIZE = 32;
-
-    private static final int VIDEO_SIZE_FHD_HD = 0;
-    private static final int VIDEO_SIZE_UHD = 1;
-    private static final int VIDEO_SIZE_VGA = 2;
-
-    private static final String APP_PATH = "/opt/usr/apps/nx-remote-controller-mod";
-    private static final String INJECT_INPUT_COMMAND = "inject_input=";
-    private static final String PING_COMMAND = "ping";
-    private static final String MOD_GUI_COMMAND_NX500
-            = "@/opt/usr/nx-on-wake/EV_EV.sh";
-    private static final String POPUP_TIMEOUT_SH_COMMAND
-            = "@" + APP_PATH + "/popup_timeout.sh";
-    private static final String GET_MOV_SIZE_COMMAND_NX500
-            = "$prefman get 0 0x0000a360 l";
-    private static final String LCD_ON_COMMAND = "lcd=on";
-    private static final String LCD_OFF_COMMAND = "lcd=off";
-    private static final String LCD_VIDEO_COMMAND = "lcd=video";
-    private static final String LCD_OSD_COMMAND = "lcd=osd";
-
+    private NXCameraInfo mCameraInfo;
+    private NotifyReceiver mNotifyReceiver;
+    private VideoPlayer mVideoPlayer;
+    private XWinViewer mXWinViewer;
+    private CommandExecutor mCommandExecutor;
+    private DiscoveryPacketReceiver mDiscoveryPacketReceiver;
 
     private ImageView mImageViewVideo;
     private ImageView mImageViewXWin;
-
     private ModeWheelAdapter mModeWheelAdapter;
     private WheelView mWheelViewMode;
-
     private JogWheelAdapter mJogWheelAdapterJog1;
     private WheelView mWheelViewJog1;
-
     private JogWheelAdapter mJogWheelAdapterJog2;
     private WheelView mWheelViewJog2;
-
     private ImageView mShutterButton;
-
-    private Socket mNotifySocket;
-    private BufferedReader mNotifyReader;
-
-    private Socket mVideoSocket;
-    private InputStream mVideoReader;
-
-    private Socket mXWinSocket;
-    private InputStream mXWinReader;
-
-    private Socket mExecutorSocket;
-    private OutputStreamWriter mExecutorWriter;
-    private DataInputStream mExecutorInputStream;
-    private CommandExecutor mCommandExecutor;
-
-    private DatagramSocket mDiscoverySocket;
-    private String mCameraDaemonVersion;
-    private String mCameraModel;
-    private String mCameraIpAddress;
-
-    private Button mButtonWifi;
-    private Button mButtonHotSpot;
     private TextView mButtonEv;
-
-    private boolean mOnRecord;
-    private boolean mVideoDrawEnabled = true;
-
-    private int mVideoSize = 0;
+    private TextView mTextViewStatus;
 
     private boolean mCameraVideoEnabled = true;
     private boolean mCameraXWinEnabled = true;
     private boolean mMobileVideoEnabled = true;
     private boolean mMobileXwinEnabled = true;
+    private boolean mVideoDrawEnabled = true;
 
-    private class NotifyReceiver implements Runnable {
-
-        @Override
-        public void run() {
-            if (mCameraIpAddress == null) {
-                return;
-            }
-            try {
-                mNotifySocket = new Socket(mCameraIpAddress, NOTIFY_PORT);
-                mNotifyReader = new BufferedReader(new InputStreamReader(mNotifySocket.getInputStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
-            }
-
-            while (true) {
-                try {
-                    if (mNotifyReader == null) {
-                        if (mNotifySocket != null) {
-                            closeNotifySocket();
-                        }
-                        break;
-                    }
-                    String line = mNotifyReader.readLine();
-                    if (line == null) {
-                        Log.d(TAG, "line is null");
-                        closeNotifySocket();
-                        break;
-                    } else if (line.startsWith(PING_COMMAND)) {
-//                        Log.d(TAG, "ping");
-                    } else if (line.startsWith("keydown ")) {
-                        final String key = line.replace("keydown ", "");
-                        String mode = "";
-                        Log.d(TAG, "keydown = " + key);
-                        switch (key) {
-                            case KEY_MODE_CUSTOM1_GET:
-                                mode = "C1";
-                                break;
-                            case KEY_MODE_M_GET:
-                                mode = "M";
-                                break;
-                            case KEY_MODE_S_GET:
-                                mode = "S";
-                                break;
-                            case KEY_MODE_A_GET:
-                                mode = "A";
-                                break;
-                            case KEY_MODE_P_GET:
-                                mode = "P";
-                                break;
-                            case KEY_MODE_SMART_GET:
-                                mode = "AUTO";
-                                break;
-                            case KEY_MODE_SCENE_GET:
-                                mode = "SCN";
-                                break;
-                            case KEY_MODE_SAS_GET:
-                                mode = "SAS";
-                                break;
-                            case KEY_MODE_CUSTOM2:
-                                mode = "C2";
-                                break;
-                        }
-                        int position = mModeWheelAdapter.getPositionByMode(mode);
-                        if (position != -1) {
-                            mModeWheelAdapter.setSelectedPosition(position);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    mWheelViewMode.setSelected(mModeWheelAdapter.getSelectedPosition());
-                                }
-                            });
-                        }
-
-                        TextView textView = null;
-                        switch (key) {
-                            case KEY_MENU:
-                                textView = (TextView) findViewById(R.id.keyMenu);
-                                break;
-                            case KEY_UP:
-                                textView = (TextView) findViewById(R.id.keyUp);
-                                break;
-                            case KEY_FN:
-                                textView = (TextView) findViewById(R.id.keyFn);
-                                break;
-                            case KEY_LEFT:
-                                textView = (TextView) findViewById(R.id.keyLeft);
-                                break;
-                            case KEY_OK:
-                                textView = (TextView) findViewById(R.id.keyOK);
-                                break;
-                            case KEY_RIGHT:
-                                textView = (TextView) findViewById(R.id.keyRight);
-                                break;
-                            case KEY_PB:
-                                textView = (TextView) findViewById(R.id.keyPB);
-                                break;
-                            case KEY_DOWN:
-                                textView = (TextView) findViewById(R.id.keyDown);
-                                break;
-                            case KEY_DEL:
-                                textView = (TextView) findViewById(R.id.keyDel);
-                                break;
-                        }
-                        if (textView != null) {
-                            final TextView finalTextView = textView;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    finalTextView.setBackgroundResource(R.drawable.rectangle_pressed);
-                                }
-                            });
-                        }
-                        textView = null;
-                        switch (key) {
-                            case KEY_AEL:
-                                textView = (TextView) findViewById(R.id.keyAEL);
-                                break;
-                            case KEY_EV:
-                                textView = (TextView) findViewById(R.id.keyEV);
-                                break;
-                            case KEY_REC:
-                                textView = (TextView) findViewById(R.id.keyRec);
-                                break;
-                        }
-                        if (textView != null) {
-                            final TextView finalTextView = textView;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    finalTextView.setBackgroundResource(R.drawable.circle_pressed);
-                                    if (key.equals(KEY_REC)) {
-                                        finalTextView.setTextColor(getResources().getColor(R.color.colorRecButtonTextNormal));
-                                    }
-                                }
-                            });
-                        }
-                        if (key.equals(KEY_S1)) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ImageView imageView = (ImageView) findViewById(R.id.shutterButton);
-                                    if (imageView != null) {
-                                        imageView.setBackgroundResource(R.drawable.circle_shutter_s1);
-                                    }
-                                }
-                            });
-                        } else if (key.equals(KEY_S2)) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ImageView imageView = (ImageView) findViewById(R.id.shutterButton);
-                                    if (imageView != null) {
-                                        imageView.setBackgroundResource(R.drawable.circle_shutter_s2);
-                                    }
-                                }
-                            });
-                        }
-                    } else if (line.startsWith("keyup ")) {
-                        final String key = line.replace("keyup ", "");
-                        Log.d(TAG, "keyup = " + key);
-                        TextView textView = null;
-                        switch (key) {
-                            case KEY_MENU:
-                                textView = (TextView) findViewById(R.id.keyMenu);
-                                break;
-                            case KEY_UP:
-                                textView = (TextView) findViewById(R.id.keyUp);
-                                break;
-                            case KEY_FN:
-                                textView = (TextView) findViewById(R.id.keyFn);
-                                break;
-                            case KEY_LEFT:
-                                textView = (TextView) findViewById(R.id.keyLeft);
-                                break;
-                            case KEY_OK:
-                                textView = (TextView) findViewById(R.id.keyOK);
-                                break;
-                            case KEY_RIGHT:
-                                textView = (TextView) findViewById(R.id.keyRight);
-                                break;
-                            case KEY_PB:
-                                textView = (TextView) findViewById(R.id.keyPB);
-                                break;
-                            case KEY_DOWN:
-                                textView = (TextView) findViewById(R.id.keyDown);
-                                break;
-                            case KEY_DEL:
-                                textView = (TextView) findViewById(R.id.keyDel);
-                                break;
-                        }
-                        if (textView != null) {
-                            final TextView finalTextView = textView;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    finalTextView.setBackgroundResource(R.drawable.rectangle);
-                                }
-                            });
-                        }
-                        textView = null;
-                        switch (key) {
-                            case KEY_AEL:
-                                textView = (TextView) findViewById(R.id.keyAEL);
-                                break;
-                            case KEY_EV:
-                                textView = (TextView) findViewById(R.id.keyEV);
-                                break;
-                            case KEY_REC:
-                                textView = (TextView) findViewById(R.id.keyRec);
-                                break;
-                        }
-                        if (textView != null) {
-                            final TextView finalTextView = textView;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    finalTextView.setBackgroundResource(R.drawable.circle);
-                                    if (key.equals(KEY_REC)) {
-                                        finalTextView.setTextColor(getResources().getColor(R.color.colorRecButtonTextNormal));
-                                    }
-                                }
-                            });
-                        }
-                        if (key.equals(KEY_S1)) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ImageView imageView = (ImageView) findViewById(R.id.shutterButton);
-                                    if (imageView != null) {
-                                        imageView.setBackgroundResource(R.drawable.circle_shutter);
-                                    }
-                                }
-                            });
-                        } else if (key.equals(KEY_S2)) {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ImageView imageView = (ImageView) findViewById(R.id.shutterButton);
-                                    if (imageView != null) {
-                                        imageView.setBackgroundResource(R.drawable.circle_shutter_s1);
-                                    }
-                                }
-                            });
-                        }
-                    } else if (line.startsWith("hevc=on")) {
-                        if (!mOnRecord) {
-                            Log.d(TAG, "on record.");
-                            mOnRecord = true;
-                            onRecordStarted();
-                        }
-                    } else if (line.startsWith("hevc=off")) {
-                        if (mOnRecord) {
-                            Log.d(TAG, "record stopped.");
-                            mOnRecord = false;
-                            onRecordStopped();
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Log.d(TAG, "notify read failed.");
-                    if (mNotifySocket != null) {
-                        closeNotifySocket();
-                    }
-                    setRemoteControlState(false);
-                }
-
-            }
-        }
-
-    }
-    private class VideoPlayer implements Runnable {
-        private byte[] mBuffer = new byte[FRAME_VIDEO_SIZE];
-
-        @Override
-        public void run() {
-            if (mCameraIpAddress == null) {
-                return;
-            }
-            try {
-                mVideoSocket = new Socket(mCameraIpAddress, VIDEO_STREAMER_PORT);
-                mVideoReader = mVideoSocket.getInputStream();
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
-            }
-
-            while (true) {
-                int readSize = 0;
-                try {
-                    while (readSize != FRAME_VIDEO_SIZE) {
-                        if (mVideoReader == null) {
-                            readSize = -1;
-                            break;
-                        }
-                        readSize += mVideoReader.read(mBuffer, readSize, FRAME_VIDEO_SIZE - readSize);
-                        if (readSize == -1) {
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (readSize == -1) {
-                    Log.d(TAG, "video read failed.");
-                    if (mVideoSocket != null) {
-                        closeVideoSocket();
-                    }
-
-                    break;
-                }
-                if (readSize == FRAME_VIDEO_SIZE) {
-                    int width = FRAME_WIDTH;
-                    int height = FRAME_HEIGHT;
-                    if (mVideoSize == VIDEO_SIZE_VGA) {
-                        width = 640;
-                    } else if (mOnRecord && mVideoSize == VIDEO_SIZE_FHD_HD) {
-                        height = 404;
-                    } else if (mOnRecord && mVideoSize == VIDEO_SIZE_UHD) {
-                        height = 380;
-                    }
-                    int[] intArray;
-                    if (width == 640) {
-                        intArray = convertYUV420_NV12toRGB8888(Arrays.copyOfRange(mBuffer, 0, width * height * 3 / 2), width, height);
-                    } else {
-                        intArray = convertYUV420_NV12toRGB8888(mBuffer, width, height);
-                    }
-                    final Bitmap bmp = Bitmap.createBitmap(intArray, width, height, Bitmap.Config.ARGB_8888);
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mVideoDrawEnabled) {
-                                mImageViewVideo.setImageBitmap(bmp);
-                            }
-                        }
-                    });
-                } else {
-                    Log.d(TAG, "readSize = " + readSize);
-                }
-            }
-        }
-    };
-
-    private class XWinViewer implements Runnable {
-        private byte[] mBuffer = new byte[XWIN_SEGMENT_SIZE];
-        final int[] mIntArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
-
-        @Override
-        public void run() {
-            if (mCameraIpAddress == null) {
-                return;
-            }
-            try {
-                mXWinSocket = new Socket(mCameraIpAddress, XWIN_STREAMER_PORT);
-                mXWinReader = mXWinSocket.getInputStream();
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
-            }
-
-            int updateCount = 0;
-            while (true) {
-                int readSize = 0;
-                try {
-                    while (readSize != XWIN_SEGMENT_SIZE) {
-                        if (mXWinReader == null) {
-                            readSize = -1;
-                            break;
-                        }
-                        readSize += mXWinReader.read(mBuffer, readSize, XWIN_SEGMENT_SIZE - readSize);
-                        if (readSize == -1) {
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (readSize == -1) {
-                    Log.d(TAG, "xwin read failed.");
-                    if (mXWinSocket != null) {
-                        closeXWinSocket();
-                    }
-                    break;
-                }
-                if (readSize == XWIN_SEGMENT_SIZE) {
-                    int index = (mBuffer[0] & 0xff) << 8 | mBuffer[1] & 0xff;
-//                    Log.d(TAG, "index = " + index);
-                    if (index == 0x0fff) { // end of frame
-                        if (updateCount > 0) {
-//                            Log.d(TAG, "update xwin");
-                            final Bitmap bmp = Bitmap.createBitmap(mIntArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    mImageViewXWin.setImageBitmap(bmp);
-                                }
-                            });
-                        }
-                        updateCount = 0;
-                    } else {
-                        int offset = index * XWIN_SEGMENT_NUM_PIXELS;
-                        for (int i = 0; i < XWIN_SEGMENT_NUM_PIXELS; i++) {
-                            int j = 2 + i * 4;
-                            int b = mBuffer[j] & 0xff;
-                            int g = mBuffer[j+1] & 0xff;
-                            int r = mBuffer[j+2] & 0xff;
-                            int a = mBuffer[j+3] & 0xff;
-                            mIntArray[offset + i] = (a << 24) | (r << 16) | (g << 8) | b;
-                        }
-                        updateCount++;
-                    }
-                } else {
-                    Log.d(TAG, "readSize = " + readSize);
-                }
-            }
-        }
-    };
-
-    private class CommandExecutor implements Runnable {
-        private BlockingQueue<String> mBlockingQueue = new ArrayBlockingQueue<>(1000);
-
-        @Override
-        public void run() {
-            if (mCameraIpAddress == null) {
-                return;
-            }
-            try {
-                mExecutorSocket = new Socket(mCameraIpAddress, EXECUTOR_PORT);
-                mExecutorWriter = new OutputStreamWriter(mExecutorSocket.getOutputStream());
-                mExecutorInputStream = new DataInputStream(mExecutorSocket.getInputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
-            }
-
-            execute(POPUP_TIMEOUT_SH_COMMAND + " 3 Connected to " + Build.MODEL +
-                    " (" + getWifiIpAddress() + ")");
-
-            Timer timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    execute("ping");
-                }
-            }, 1000, 1000);
-
-            while (true) {
-                try {
-                    String command = mBlockingQueue.take();
-                    byte[] readBuf = new byte[1024];
-
-                    if (!command.startsWith(INJECT_INPUT_COMMAND) &&
-                            !command.startsWith(PING_COMMAND)) {
-                        Log.d(TAG, "command = " + command);
-                    }
-                    try {
-                        if (mExecutorWriter == null || mExecutorInputStream == null) {
-                            if (mExecutorSocket != null) {
-                                closeExecutorSocket();
-                            }
-                            break;
-                        }
-                        mExecutorWriter.write(command + "\n");
-                        mExecutorWriter.flush();
-
-                        String commandOutput = "";
-                        while (true) {
-                            int size = mExecutorInputStream.readInt();
-                            if (size > readBuf.length) {
-                                Log.e(TAG, "size is too big. size = " + size);
-                                break;
-                            }
-                            if (size > 0) {
-                                while (size > 0) {
-                                    int readSize = mExecutorInputStream.read(readBuf, 0, size);
-                                    size -= readSize;
-                                    commandOutput += new String(readBuf, 0, readSize);
-                                }
-                            } else {
-                                if (command.equals(GET_MOV_SIZE_COMMAND_NX500)) {
-                                    Log.d(TAG, "commandOutput = " + commandOutput);
-                                    if (commandOutput.startsWith("[app] in memory:") &&
-                                            commandOutput.length() > 30) {
-                                        String output = commandOutput.substring(29);
-                                        if (output.startsWith("0")) {
-                                            Log.d(TAG, "4096x2160");
-                                            mVideoSize = VIDEO_SIZE_UHD;
-                                        } else if (output.startsWith("9") || output.startsWith("10") || output.startsWith("11")) {
-                                            Log.d(TAG, "640x480");
-                                            mVideoSize = VIDEO_SIZE_VGA;
-                                        } else {
-                                            Log.d(TAG, "16/9");
-                                            mVideoSize = VIDEO_SIZE_FHD_HD;
-                                        }
-                                        setVideoMargin();
-                                    }
-                                } else {
-                                    if (commandOutput.length() > 0) {
-                                        Log.d(TAG, "command output (" + commandOutput.length() + ") = " + commandOutput);
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Log.d(TAG, "exectuor read or write failed.");
-                        if (mExecutorSocket != null) {
-                            closeExecutorSocket();
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            setRemoteControlState(false);
-        }
-
-        public void execute(String command) {
-            if (mExecutorSocket != null) {
-                mBlockingQueue.add(command);
-            }
-        }
-    }
-
-    private String getWifiIpAddress() {
+    protected String getWifiIpAddress() {
         WifiManager wifiMan = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInf = wifiMan.getConnectionInfo();
         int ipAddress = wifiInf.getIpAddress();
@@ -676,22 +130,22 @@ public class MainActivity extends AppCompatActivity
                 (ipAddress >> 16 & 0xff),(ipAddress >> 24 & 0xff));
     }
 
-    private void onRecordStarted() {
+    protected void onRecordStarted() {
         mVideoDrawEnabled = false;
         runCommand("vfps=1");
         runCommand("xfps=1");
         runCommand(GET_MOV_SIZE_COMMAND_NX500); // NX500
     }
 
-    private void onRecordStopped() {
+    protected void onRecordStopped() {
         mVideoDrawEnabled = false;
         runCommand("vfps=4");
         runCommand("xfps=4");
-        mVideoSize = -1;
+        mVideoPlayer.setVideoSize(VIDEO_SIZE_NORMAL);
         setVideoMargin();
     }
 
-    private void setVideoMargin() {
+    protected void setVideoMargin() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -700,7 +154,7 @@ public class MainActivity extends AppCompatActivity
                 float wr = (float) width / 720f;
                 float hr = (float) height / 480f;
                 FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) mImageViewVideo.getLayoutParams();
-                switch (mVideoSize) {
+                switch (mVideoPlayer.getVideoSize()) {
                     case VIDEO_SIZE_FHD_HD:
                         layoutParams.setMargins(0, (int) (38 * hr), 0, (int) (38 * hr));
                         break;
@@ -727,92 +181,54 @@ public class MainActivity extends AppCompatActivity
         }, 1500);
     }
 
-    private void setRemoteControlState(final boolean onConnected) {
-        Log.d(TAG, "setRemoteControlState(), onConnected = " + onConnected);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                RelativeLayout layout = (RelativeLayout) findViewById(R.id.layoutWifiInfo);
-                if (onConnected) {
-                    layout.setVisibility(View.GONE);
-                } else {
-                    layout.setVisibility(View.VISIBLE);
-                }
-            }
-        });
-
+    private void setConnectionStatus(final boolean onConnected) {
+        Log.d(TAG, "setConnectionStatus(), onConnected = " + onConnected);
+//        runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                if (onConnected) {
+//                    mTextViewStatus.setText("Camera connected.");
+//                    mTextViewStatus.append("\nIP: " + mCameraInfo.getIpAddress());
+//                    Timer timer = new Timer();
+//                    timer.schedule(new TimerTask() {
+//                        @Override
+//                        public void run() {
+//                            runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    mTextViewStatus.setText("");
+//                                }
+//                            });
+//                        }
+//                    }, 3000);
+//                } else {
+//                    mTextViewStatus.setText("Camera disconnected.");
+//                }
+//            }
+//        });
     }
 
-    private interface DiscoveryListener {
-        void onFound(String version, String model, String ipAddress);
-    }
-
-    private class DiscoveryPacketReceiver implements Runnable {
-        private DiscoveryListener mDiscoveryListener;
-
-        public DiscoveryPacketReceiver(DiscoveryListener listener) {
-            mDiscoveryListener = listener;
-        }
-
-        @Override
-        public void run() {
-            byte[] buf = new byte[DISCOVERY_PACKET_SIZE];
-            DatagramPacket packet = new DatagramPacket(buf, buf.length);
-
-            try {
-                while (true) {
-                    if (mDiscoverySocket == null) {
-                        mDiscoverySocket = new DatagramSocket(DISCOVERY_UDP_PORT, InetAddress.getByName("0.0.0.0"));
-                        mDiscoverySocket.setBroadcast(true);
-                    }
-                    mDiscoverySocket.receive(packet);
-                    byte[] data = packet.getData();
-                    String discoveryMessage = new String(data);
-                    String[] cameraInfos = discoveryMessage.split("\\|");
-                    if (cameraInfos.length == 4) {
-                        String header = cameraInfos[0];
-                        String version = cameraInfos[1];
-                        String model = cameraInfos[2];
-                        // cameraInfos[3] is garbage
-                        String ipAddress = packet.getAddress().getHostAddress();
-
-                        if (header.equals("NX_REMOTE")) {
-                            Log.d(TAG, "discovery packet received from " + ipAddress +
-                                    ". [NX_REMOTE v" + version + " (" + model + ")]");
-                            if (mDiscoveryListener != null) {
-                                mDiscoveryListener.onFound(version , model, ipAddress);
-                                Thread.sleep(5000); // wait for connect to camera
-                            }
-                        }
-                    }
+    protected void startDiscovery() {
+        if (mDiscoveryPacketReceiver == null) {
+            DiscoveryPacketReceiver.DiscoveryListener discoveryListener
+                    = new DiscoveryPacketReceiver.DiscoveryListener() {
+                @Override
+                public void onFound(String version, String model, String ipAddress) {
+                    stopDiscovery();
+                    disconnectFromCameraDaemon();
+                    mCameraInfo = new NXCameraInfo(version, model, ipAddress);
+                    connectToCameraDaemon();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            Log.d(TAG, "DiscoveryPacketReceiver finished.");
+            };
+            mDiscoveryPacketReceiver = new DiscoveryPacketReceiver(discoveryListener);
+            mDiscoveryPacketReceiver.start();
         }
-    };
-
-    private void startDiscovery() {
-        DiscoveryListener discoveryListener = new DiscoveryListener() {
-            @Override
-            public void onFound(String version, String model, String ipAddress) {
-                disconnectFromCameraDaemon();
-                mCameraDaemonVersion = version;
-                mCameraIpAddress = ipAddress;
-                mCameraModel = model;
-                connectToCameraDaemon();
-            }
-        };
-        new Thread(new DiscoveryPacketReceiver(discoveryListener)).start();
     }
 
     private void stopDiscovery() {
-        if (mDiscoverySocket != null) {
-            mDiscoverySocket.close();
-            mDiscoverySocket = null;
+        if (mDiscoveryPacketReceiver != null) {
+            mDiscoveryPacketReceiver.closeSocket();
+            mDiscoveryPacketReceiver = null;
         }
     }
 
@@ -829,44 +245,28 @@ public class MainActivity extends AppCompatActivity
 
         if (mMobileVideoEnabled) {
             startVideoPlayer();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mImageViewVideo.setVisibility(View.VISIBLE);
-                }
-            });
+            setVideoVisibility(true);
         } else {
-            closeVideoSocket();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mImageViewVideo.setVisibility(View.INVISIBLE);
-                }
-            });
+            if (mVideoPlayer != null) {
+                mVideoPlayer.closeSocket();
+            }
+            setVideoVisibility(false);
         }
         if (mMobileXwinEnabled) {
             startXWinViewer();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mImageViewXWin.setVisibility(View.VISIBLE);
-                }
-            });
+            setXWinVisibility(true);
         } else {
-            closeXWinSocket();
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mImageViewXWin.setVisibility(View.INVISIBLE);
-                }
-            });
+            if (mXWinViewer != null) {
+                mXWinViewer.closeSocket();
+            }
+            setXWinVisibility(false);
         }
 
         startExecutor();
         startNotifyReceiver();
 
-        setRemoteControlState(true);
-        if (mOnRecord) {
+        setConnectionStatus(true);
+        if (mCameraInfo.isRecording()) {
             runCommand("vfps=1");
             runCommand("xfps=1");
         } else {
@@ -902,7 +302,7 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         View.OnTouchListener onTouchListener = new View.OnTouchListener() {
-            private static final int SKIP_MOUSE_MOVE_COUNT = 2;
+            private static final int SKIP_MOUSE_MOVE_COUNT = 4;
             private int mSkipCount;
 
             @Override
@@ -1096,27 +496,6 @@ public class MainActivity extends AppCompatActivity
              }
         });
 
-        mButtonWifi = (Button) findViewById(R.id.buttonWifiSettings);
-        mButtonWifi.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-            }
-        });
-
-        mButtonHotSpot = (Button) findViewById(R.id.buttonHotSpotSettings);
-        mButtonHotSpot.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                final Intent intent = new Intent(Intent.ACTION_MAIN, null);
-                intent.addCategory(Intent.CATEGORY_LAUNCHER);
-                final ComponentName cn = new ComponentName("com.android.settings", "com.android.settings.TetherSettings");
-                intent.setComponent(cn);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
-            }
-        });
-
         mButtonEv = (TextView) findViewById(R.id.keyEV);
         mButtonEv.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -1136,41 +515,33 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        mTextViewStatus = (TextView) findViewById(R.id.textViewStatus);
     }
 
-    private void startNotifyReceiver() {
-        if (mNotifySocket == null) {
-            new Thread(new NotifyReceiver()).start();
+    protected void startNotifyReceiver() {
+        if (mNotifyReceiver == null) {
+            mNotifyReceiver = new NotifyReceiver(mCameraInfo, this);
+            mNotifyReceiver.start();
         }
     }
 
-    private void startVideoPlayer() {
-        if (mVideoSocket == null) {
-            new Thread(new VideoPlayer()).start();
+    protected void startVideoPlayer() {
+        if (mVideoPlayer == null && mMobileVideoEnabled) {
+            mVideoPlayer = new VideoPlayer(mCameraInfo, this);
+            mVideoPlayer.start();
         }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mImageViewVideo.setVisibility(View.VISIBLE);
-            }
-        });
     }
 
-    private void startXWinViewer() {
-        if (mXWinSocket == null) {
-            new Thread(new XWinViewer()).start();
+    protected void startXWinViewer() {
+        if (mXWinViewer == null && mMobileXwinEnabled) {
+            mXWinViewer = new XWinViewer(mCameraInfo, this);
+            mXWinViewer.start();
         }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mImageViewXWin.setVisibility(View.VISIBLE);
-            }
-        });
     }
 
-    private void startExecutor() {
-        if (mExecutorSocket == null) {
-            mCommandExecutor = new CommandExecutor();
+    protected void startExecutor() {
+        if (mCommandExecutor == null) {
+            mCommandExecutor = new CommandExecutor(mCameraInfo, this);
             new Thread(mCommandExecutor).start();
         }
     }
@@ -1216,9 +587,19 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Toast.makeText(this, "Not implemented yet.", Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.action_open_mod) {
             runCommand(MOD_GUI_COMMAND_NX500);
+        } else if (id == R.id.action_wifi_settings) {
+            startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+        } else if (id == R.id.action_hotspot_settings) {
+            final Intent intent = new Intent(Intent.ACTION_MAIN, null);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            final ComponentName cn = new ComponentName("com.android.settings", "com.android.settings.TetherSettings");
+            intent.setComponent(cn);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);
@@ -1240,19 +621,20 @@ public class MainActivity extends AppCompatActivity
             mCameraXWinEnabled = true;
             mMobileVideoEnabled = true;
             mMobileXwinEnabled = false;
-            runCommand(LCD_ON_COMMAND);
+            closeXWinViewer();
         } else if (id == R.id.nav_lv_osd_osd) {
             mCameraVideoEnabled = true;
             mCameraXWinEnabled = true;
             mMobileVideoEnabled = false;
             mMobileXwinEnabled = true;
-            runCommand(LCD_ON_COMMAND);
+            closeVideoPlayer();
         } else if (id == R.id.nav_lv_osd_off) {
             mCameraVideoEnabled = true;
             mCameraXWinEnabled = true;
             mMobileVideoEnabled = false;
             mMobileXwinEnabled = false;
-            runCommand(LCD_ON_COMMAND);
+            closeVideoPlayer();
+            closeXWinViewer();
         } else if (id == R.id.nav_lv_lv) {
             mCameraVideoEnabled = true;
             mCameraXWinEnabled = false;
@@ -1263,17 +645,20 @@ public class MainActivity extends AppCompatActivity
             mCameraXWinEnabled = false;
             mMobileVideoEnabled = false;
             mMobileXwinEnabled = false;
-            runCommand(LCD_VIDEO_COMMAND);
+            closeVideoPlayer();
         } else if (id == R.id.nav_off_lv) {
             mCameraVideoEnabled = false;
             mCameraXWinEnabled = false;
             mMobileVideoEnabled = true;
             mMobileXwinEnabled = false;
+            closeXWinViewer();
         } else if (id == R.id.nav_off_off) {
             mCameraVideoEnabled = false;
             mCameraXWinEnabled = false;
             mMobileVideoEnabled = false;
             mMobileXwinEnabled = false;
+            closeVideoPlayer();
+            closeXWinViewer();
         }
 
         AsyncTask.execute(new Runnable() {
@@ -1283,236 +668,63 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
-    private void closeNotifySocket() {
-        if (mNotifyReader != null) {
-            try {
-                mNotifyReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mNotifyReader = null;
-        }
-        if (mNotifySocket != null) {
-            try {
-                mNotifySocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mNotifySocket = null;
+    protected void closeNotifyReceiver() {
+        if (mNotifyReceiver != null) {
+            mNotifyReceiver.closeSocket();
+            mNotifyReceiver = null;
         }
     }
 
-    private void closeVideoSocket() {
-        if (mVideoReader != null) {
-            try {
-                mVideoReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mVideoReader = null;
+    protected void closeVideoPlayer() {
+        if (mVideoPlayer != null) {
+            mVideoPlayer.closeSocket();
+            mVideoPlayer = null;
+            setVideoVisibility(false);
         }
-        if (mVideoSocket != null) {
-            try {
-                mVideoSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mVideoSocket = null;
-        }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mImageViewVideo.setVisibility(View.INVISIBLE);
-            }
-        });
     }
 
-    private void closeXWinSocket() {
-        if (mXWinReader != null) {
-            try {
-                mXWinReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mXWinReader = null;
+    protected void closeXWinViewer() {
+        if (mXWinViewer != null) {
+            mXWinViewer.closeSocket();
+            mXWinViewer = null;
+            setXWinVisibility(false);
         }
-        if (mXWinSocket != null) {
-            try {
-                mXWinSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mXWinSocket = null;
-        }
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mImageViewXWin.setVisibility(View.INVISIBLE);
-            }
-        });
     }
 
-    private void closeExecutorSocket() {
-        if (mExecutorWriter != null) {
-            try {
-                mExecutorWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mExecutorWriter = null;
+    protected void closeCommandExecutor() {
+        if (mCommandExecutor != null) {
+            mCommandExecutor.closeSocket();
+            mCommandExecutor = null;
         }
-        if (mExecutorInputStream != null) {
-            try {
-                mExecutorInputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mExecutorInputStream = null;
-        }
-        if (mExecutorSocket != null) {
-            try {
-                mExecutorSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mExecutorSocket = null;
-        }
-        mCommandExecutor = null;
     }
 
-    private void disconnectFromCameraDaemon() {
+    protected void disconnectFromCameraDaemon() {
         Log.d(TAG, "disconnectFromCameraDaemon()");
-        closeNotifySocket();
-        closeVideoSocket();
-        closeXWinSocket();
-        closeExecutorSocket();
 
-        mCameraDaemonVersion = null;
-        mCameraIpAddress = null;
-        mCameraModel = null;
+        closeNotifyReceiver();
+        closeVideoPlayer();
+        closeXWinViewer();
+        closeCommandExecutor();
+
+//        mCameraInfo = null;
+
+        setConnectionStatus(false);
     }
-
-    /**
-     * Converts YUV420 NV12 to RGB8888
-     *
-     * @param data byte array on YUV420 NV12 format.
-     * @param width pixels width
-     * @param height pixels height
-     * @return a RGB8888 pixels int array. Where each int is a pixels ARGB.
-     */
-    public static int[] convertYUV420_NV12toRGB8888(byte [] data, int width, int height) {
-        int size = width*height;
-        int offset = size;
-        int[] pixels = new int[size];
-        int u, v, y1, y2, y3, y4;
-
-        // i percorre os Y and the final pixels
-        // k percorre os pixles U e V
-        for(int i=0, k=0; i < size; i+=2, k+=2) {
-            y1 = data[i  ]&0xff;
-            y2 = data[i+1]&0xff;
-            y3 = data[width+i  ]&0xff;
-            y4 = data[width+i+1]&0xff;
-
-            v = data[offset+k  ]&0xff;
-            u = data[offset+k+1]&0xff;
-            u = u-128;
-            v = v-128;
-
-            pixels[i  ] = convertYUVtoRGB(y1, u, v);
-            pixels[i+1] = convertYUVtoRGB(y2, u, v);
-            pixels[width+i  ] = convertYUVtoRGB(y3, u, v);
-            pixels[width+i+1] = convertYUVtoRGB(y4, u, v);
-
-            if (i!=0 && (i+2)%width==0)
-                i+=width;
-        }
-
-        return pixels;
-    }
-
-    private static int convertYUVtoRGB(int y, int u, int v) {
-        int r,g,b;
-
-        r = y + (int)1.402f*v;
-        g = y - (int)(0.344f*u +0.714f*v);
-        b = y + (int)1.772f*u;
-        r = r>255? 255 : r<0 ? 0 : r;
-        g = g>255? 255 : g<0 ? 0 : g;
-        b = b>255? 255 : b<0 ? 0 : b;
-        return 0xff000000 | (b<<16) | (g<<8) | r;
-    }
-
-    private static final String KEY_UP = "KP_Up";
-    private static final String KEY_LEFT = "KP_Left";
-    private static final String KEY_RIGHT = "KP_Right";
-    private static final String KEY_DOWN = "KP_Down";
-    private static final String KEY_DEL = "KP_Delete";
-    private static final String KEY_DEPTH = "Henkan_Mode";
-    private static final String KEY_METER = "Hiragana_Katakana";
-    private static final String KEY_OK = "KP_Enter";
-    private static final String KEY_PWON = "XF86AudioRaiseVolume";
-    private static final String KEY_PWOFF = "XF86PowerOff";
-    private static final String KEY_RESET = "XF86PowerOff";
-    private static final String KEY_S1 = "Super_L";
-    private static final String KEY_S2 = "Super_R";
-    private static final String KEY_MENU = "Menu";
-    private static final String KEY_AEL = "XF86Favorites";
-    private static final String KEY_REC = "XF86WebCam";
-    private static final String KEY_FN = "XF86HomePage";
-    private static final String KEY_EV = "XF86Reload";
-    private static final String KEY_PB = "XF86Tools";
-    private static final String KEY_AF_MODE = "Xf86TaskPane";
-    private static final String KEY_WB = "XF86Launch6";
-    private static final String KEY_ISO = "XF86Launch7";
-    private static final String KEY_AF_ON = "XF86Launch9";
-    private static final String KEY_LIGHT = "XF86TouchpadToggle";
-    private static final String KEY_MF_ZOOM = "XF86TouchpadOff";
-    private static final String KEY_WIFI = "XF86Mail";
-
-    private static final String KEY_JOG1_CW = "XF86ScrollUp";
-    private static final String KEY_JOG1_CCW = "XF86ScrollDown";
-    private static final String KEY_JOG2_CW = "parenleft";
-    private static final String KEY_JOG2_CCW = "parenright";
-    private static final String KEY_JOG_CW = "XF86AudioNext";
-    private static final String KEY_JOG_CCW = "XF86AudioPrev";
-
-    private static final String KEY_MODE_SCENE_GET = "F4";
-    private static final String KEY_MODE_SCENE = "XF86Send";
-    private static final String KEY_MODE_SMART_GET = "F6";
-    private static final String KEY_MODE_SMART = "XF86Reply";
-    private static final String KEY_MODE_P_GET = "F7";
-    private static final String KEY_MODE_P = "XF86MailForward";
-    private static final String KEY_MODE_A_GET = "F8";
-    private static final String KEY_MODE_A = "XF86Save";
-    private static final String KEY_MODE_S_GET = "F9";
-    private static final String KEY_MODE_S = "XF86Documents";
-    private static final String KEY_MODE_M_GET = "F10";
-    private static final String KEY_MODE_M = "XF86Battery";
-    private static final String KEY_MODE_CUSTOM1_GET = "KP_Home";
-    private static final String KEY_MODE_CUSTOM1 = "XF86WLAN";
-    private static final String KEY_MODE_CUSTOM2 = "XF86Bluetooth";
-    private static final String KEY_MODE_SAS_GET = "F1";
-    private static final String KEY_MODE_SAS = "XF86KbdBrightnessDown";
-
-    private static final String KEY_WHEEL_CW = "Left";
-    private static final String KEY_WHEEL_CCW = "Right";
-
-    private static final String KEY_DRIVE_SINGLE = "XF86Search";
-    private static final String KEY_DRIVE_CONTI_N = "XF86Go";
-    private static final String KEY_DRIVE_CONTI_H = "XF86Finance";
-    private static final String KEY_DRIVE_TIMER = "XF86Game";
-    private static final String KEY_DRIVE_BRACKET = "XF86Shop";
 
     private void runCommand(String command) {
         if (mCommandExecutor != null) {
             mCommandExecutor.execute(command);
+        }
+    }
+
+    protected void setVideoSize(int videoSize) {
+        if (mVideoPlayer != null) {
+            mVideoPlayer.setVideoSize(videoSize);
         }
     }
 
@@ -1571,6 +783,184 @@ public class MainActivity extends AppCompatActivity
 
     private void keyClick(String key) {
         runCommand(INJECT_INPUT_COMMAND + "key " + key);
+    }
+
+    protected void setVideoBitmap(final Bitmap bitmap) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mVideoDrawEnabled) {
+                    mImageViewVideo.setImageBitmap(bitmap);
+                }
+            }
+        });
+    }
+
+    protected void setXWinBitmap(final Bitmap bitmap) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mImageViewXWin.setImageBitmap(bitmap);
+            }
+        });
+    }
+    protected void setXWinVisibility(final boolean visible) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mImageViewXWin.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+            }
+        });
+    }
+
+    protected void setVideoVisibility(final boolean visible) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mImageViewVideo.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+            }
+        });
+    }
+    protected void setButtonBackground(final String key, final boolean keyDown) {
+        Log.d(TAG, "key = " + key + " (down = " + keyDown + ")");
+
+        String mode = "";
+        switch (key) {
+            case KEY_MODE_CUSTOM1_GET:
+                mode = "C1";
+                break;
+            case KEY_MODE_M_GET:
+                mode = "M";
+                break;
+            case KEY_MODE_S_GET:
+                mode = "S";
+                break;
+            case KEY_MODE_A_GET:
+                mode = "A";
+                break;
+            case KEY_MODE_P_GET:
+                mode = "P";
+                break;
+            case KEY_MODE_SMART_GET:
+                mode = "AUTO";
+                break;
+            case KEY_MODE_SCENE_GET:
+                mode = "SCN";
+                break;
+            case KEY_MODE_SAS_GET:
+                mode = "SAS";
+                break;
+            case KEY_MODE_CUSTOM2:
+                mode = "C2";
+                break;
+        }
+        if (keyDown) {
+            int position = mModeWheelAdapter.getPositionByMode(mode);
+            if (position != -1) {
+                mModeWheelAdapter.setSelectedPosition(position);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mWheelViewMode.setSelected(mModeWheelAdapter.getSelectedPosition());
+                    }
+                });
+            }
+        }
+
+        TextView textView = null;
+        switch (key) {
+            case KEY_MENU:
+                textView = (TextView) findViewById(R.id.keyMenu);
+                break;
+            case KEY_UP:
+                textView = (TextView) findViewById(R.id.keyUp);
+                break;
+            case KEY_FN:
+                textView = (TextView) findViewById(R.id.keyFn);
+                break;
+            case KEY_LEFT:
+                textView = (TextView) findViewById(R.id.keyLeft);
+                break;
+            case KEY_OK:
+                textView = (TextView) findViewById(R.id.keyOK);
+                break;
+            case KEY_RIGHT:
+                textView = (TextView) findViewById(R.id.keyRight);
+                break;
+            case KEY_PB:
+                textView = (TextView) findViewById(R.id.keyPB);
+                break;
+            case KEY_DOWN:
+                textView = (TextView) findViewById(R.id.keyDown);
+                break;
+            case KEY_DEL:
+                textView = (TextView) findViewById(R.id.keyDel);
+                break;
+        }
+        if (textView != null) {
+            final TextView finalTextView = textView;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (keyDown) {
+                        finalTextView.setBackgroundResource(R.drawable.rectangle_pressed);
+                    } else {
+                        finalTextView.setBackgroundResource(R.drawable.rectangle);
+                    }
+                }
+            });
+        }
+
+        textView = null;
+        switch (key) {
+            case KEY_AEL:
+                textView = (TextView) findViewById(R.id.keyAEL);
+                break;
+            case KEY_EV:
+                textView = (TextView) findViewById(R.id.keyEV);
+                break;
+            case KEY_REC:
+                textView = (TextView) findViewById(R.id.keyRec);
+                break;
+        }
+        if (textView != null) {
+            final TextView finalTextView = textView;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    finalTextView.setBackgroundResource(keyDown ?
+                            R.drawable.circle_pressed : R.drawable.circle);
+                    if (key.equals(KEY_REC)) {
+                        finalTextView.setTextColor(getResources().getColor(keyDown
+                                ? R.color.colorRecButtonTextNormal
+                                : R.color.colorRecButtonTextNormal));
+                    }
+                }
+            });
+        }
+        if (key.equals(KEY_S1)) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ImageView imageView = (ImageView) findViewById(R.id.shutterButton);
+                    if (imageView != null) {
+                        imageView.setBackgroundResource(keyDown ?
+                                R.drawable.circle_shutter_s1 : R.drawable.circle_shutter);
+                    }
+                }
+            });
+        } else if (key.equals(KEY_S2)) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ImageView imageView = (ImageView) findViewById(R.id.shutterButton);
+                    if (imageView != null) {
+                        imageView.setBackgroundResource(keyDown ?
+                                R.drawable.circle_shutter_s2 : R.drawable.circle_shutter_s1);
+                    }
+                }
+            });
+        }
     }
 
     private class TextDrawable extends Drawable {

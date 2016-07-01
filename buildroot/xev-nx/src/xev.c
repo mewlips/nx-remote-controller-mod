@@ -1166,6 +1166,7 @@ main (int argc, char **argv)
 	      case 'p':			/* -p */
                 print_key_event = True;
                 fprintf(stdout, "%d\n", getpid());
+                fflush(stdout);
 		continue;
 	      case 's':			/* -s */
 		attr.save_under = True;
