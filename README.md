@@ -11,14 +11,13 @@ Android NX Remote Controller App
  - nx-wake-on 1.0x or 1.1
  - nx-patch 5.2
 
-* Unzip the nx-remote-controller-mod.zip file to root of your SD card.
-
-* Insert the SD card into your camera and power up the camera.
-
-* Wait. The installation will be completed soon.
+1. Download https://github.com/mewlips/nx-remote-controller-mod/raw/master/nx-remote-controller-mod-v0.7.zip
+1. Unzip the nx-remote-controller-mod-v0.7.zip file to root of your SD card.
+2. Insert the SD card into your camera and power up the camera.
+3. Wait. The installation will be completed soon.
 
 ### Android
-- Install the https://github.com/mewlips/nx-remote-controller-mod/blob/master/NXRemoteController.apk
+- Install the https://github.com/mewlips/nx-remote-controller-mod/raw/master/NXRemoteController-v0.7.apk
 
 ## How To Use
 
