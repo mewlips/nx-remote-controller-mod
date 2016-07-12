@@ -1,6 +1,7 @@
 package com.mewlips.nxremote;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.util.Log;
 
 import java.io.IOException;
@@ -9,6 +10,8 @@ import java.net.Socket;
 
 import static com.mewlips.nxremote.Configurations.FRAME_HEIGHT;
 import static com.mewlips.nxremote.Configurations.FRAME_WIDTH;
+import static com.mewlips.nxremote.Configurations.OLD_NX_LCD_HEIGHT;
+import static com.mewlips.nxremote.Configurations.OLD_NX_LCD_WIDTH;
 import static com.mewlips.nxremote.Configurations.XWIN_SEGMENT_NUM_PIXELS;
 import static com.mewlips.nxremote.Configurations.XWIN_SEGMENT_SIZE;
 import static com.mewlips.nxremote.Configurations.XWIN_STREAMER_PORT;
@@ -26,11 +29,17 @@ public class XWinViewer extends Thread {
     private InputStream mReader;
 
     private byte[] mBuffer = new byte[XWIN_SEGMENT_SIZE];
-    final int[] mIntArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
+    private int[] mIntArray;
 
     public XWinViewer(NXCameraInfo cameraInfo, MainActivity activity) {
         mCameraInfo = cameraInfo;
         mActivity = activity;
+
+        if (mCameraInfo.isOldNxModel()) {
+            mIntArray = new int[OLD_NX_LCD_WIDTH * OLD_NX_LCD_HEIGHT];
+        } else {
+            mIntArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
+        }
     }
 
     @Override
@@ -76,8 +85,18 @@ public class XWinViewer extends Thread {
                 if (index == 0x0fff) { // end of frame
                     if (updateCount > 0) {
 //                            Log.d(TAG, "update xwin");
-                        Bitmap bitmap = Bitmap.createBitmap(mIntArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
-                        mActivity.setXWinBitmap(bitmap);
+                        Bitmap bitmap;
+                        if (mCameraInfo.isOldNxModel()) {
+                            bitmap = Bitmap.createBitmap(mIntArray, OLD_NX_LCD_WIDTH, OLD_NX_LCD_HEIGHT, Bitmap.Config.ARGB_8888);
+                            Matrix matrix = new Matrix();
+                            matrix.postRotate(270.0f);
+                            Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                            mActivity.setXWinBitmap(rotatedBitmap);
+
+                        } else {
+                            bitmap = Bitmap.createBitmap(mIntArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+                            mActivity.setXWinBitmap(bitmap);
+                        }
                     }
                     updateCount = 0;
                 } else {

@@ -35,6 +35,25 @@ public class NXCameraInfo {
         this.onRecording = onRecording;
     }
 
+    public boolean isNewNxModel() {
+        if (model.equals("NX500") || model.equals("NX1")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isOldNxModel() {
+        return !isNewNxModel();
+    }
+
+    public boolean isNx1() {
+        return model.equals("NX1");
+    }
+
+    public boolean isNx500() {
+        return model.equals("NX500");
+    }
+
     @Override
     public String toString() {
         return "NXCameraInfo{" +

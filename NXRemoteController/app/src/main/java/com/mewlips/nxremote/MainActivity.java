@@ -42,53 +42,8 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.mewlips.nxremote.Configurations.FRAME_HEIGHT;
-import static com.mewlips.nxremote.Configurations.FRAME_WIDTH;
-import static com.mewlips.nxremote.Configurations.GET_MOV_SIZE_COMMAND_NX500;
-import static com.mewlips.nxremote.Configurations.INJECT_INPUT_COMMAND;
-import static com.mewlips.nxremote.Configurations.LCD_OFF_COMMAND;
-import static com.mewlips.nxremote.Configurations.LCD_ON_COMMAND;
-import static com.mewlips.nxremote.Configurations.LCD_VIDEO_COMMAND;
-import static com.mewlips.nxremote.Configurations.MOD_GUI_COMMAND_NX500;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_FHD_HD;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_NORMAL;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_UHD;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_VGA;
-import static com.mewlips.nxremote.NXKeys.KEY_AEL;
-import static com.mewlips.nxremote.NXKeys.KEY_DEL;
-import static com.mewlips.nxremote.NXKeys.KEY_DOWN;
-import static com.mewlips.nxremote.NXKeys.KEY_EV;
-import static com.mewlips.nxremote.NXKeys.KEY_FN;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CCW;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CW;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG_CCW;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG_CW;
-import static com.mewlips.nxremote.NXKeys.KEY_LEFT;
-import static com.mewlips.nxremote.NXKeys.KEY_MENU;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_A;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_A_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM2;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_M;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_M_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_P;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_P_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_S;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_S_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_OK;
-import static com.mewlips.nxremote.NXKeys.KEY_PB;
-import static com.mewlips.nxremote.NXKeys.KEY_REC;
-import static com.mewlips.nxremote.NXKeys.KEY_RIGHT;
-import static com.mewlips.nxremote.NXKeys.KEY_S1;
-import static com.mewlips.nxremote.NXKeys.KEY_S2;
-import static com.mewlips.nxremote.NXKeys.KEY_UP;
+import static com.mewlips.nxremote.Configurations.*;
+import static com.mewlips.nxremote.NXKeys.*;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -217,7 +172,13 @@ public class MainActivity extends AppCompatActivity
                     stopDiscovery();
                     disconnectFromCameraDaemon();
                     mCameraInfo = new NXCameraInfo(version, model, ipAddress);
-                    connectToCameraDaemon();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            setup();
+                            connectToCameraDaemon();
+                        }
+                    });
                 }
             };
             mDiscoveryPacketReceiver = new DiscoveryPacketReceiver(discoveryListener);
@@ -275,32 +236,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-
+    private void setup() {
         View.OnTouchListener onTouchListener = new View.OnTouchListener() {
             private static final int SKIP_MOUSE_MOVE_COUNT = 4;
             private int mSkipCount;
@@ -308,10 +244,18 @@ public class MainActivity extends AppCompatActivity
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 int action = event.getAction() & MotionEvent.ACTION_MASK;
-                int x = (int) (event.getX() * (float)FRAME_WIDTH / (float)v.getWidth());
-                int y = (int) (event.getY() * (float)FRAME_HEIGHT / (float)v.getHeight());
+                int x;
+                int y;
                 String command = INJECT_INPUT_COMMAND;
 
+                if (mCameraInfo.isOldNxModel()) {
+                    y = (int) (event.getX() * (float) OLD_NX_LCD_HEIGHT / (float) v.getWidth());
+                    x = (int) (event.getY() * (float) OLD_NX_LCD_WIDTH / (float) v.getHeight());
+                    x = OLD_NX_LCD_WIDTH - x;
+                } else {
+                    x = (int) (event.getX() * (float) FRAME_WIDTH / (float) v.getWidth());
+                    y = (int) (event.getY() * (float) FRAME_HEIGHT / (float) v.getHeight());
+                }
                 Log.d(TAG, "action = " + action + ", x = " + x + ", y = " + y);
 
                 switch (action) {
@@ -336,8 +280,16 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        int[] intArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
-        Bitmap bmp = Bitmap.createBitmap(intArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+        int[] intArray;
+        Bitmap bmp;
+
+        if (mCameraInfo.isNewNxModel()) {
+            intArray = new int[FRAME_WIDTH * FRAME_HEIGHT];
+            bmp = Bitmap.createBitmap(intArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+        } else {
+            intArray = new int[OLD_NX_FRAME_WIDTH * FRAME_HEIGHT];
+            bmp = Bitmap.createBitmap(intArray, OLD_NX_FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+        }
 
         findViewById(R.id.layoutLcd).setOnTouchListener(onTouchListener);
 
@@ -429,71 +381,71 @@ public class MainActivity extends AppCompatActivity
             private int mPrevHeight;
             private boolean mS1Downed;
             private boolean mS2Downed;
-             @Override
-             public boolean onTouch(View v, MotionEvent event) {
-                 float currY;
-                 int currHeight;
-                 RelativeLayout.LayoutParams layoutParams;
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                float currY;
+                int currHeight;
+                RelativeLayout.LayoutParams layoutParams;
 
-                 int action = event.getAction() & MotionEvent.ACTION_MASK;
-                 switch (action) {
-                     case MotionEvent.ACTION_DOWN:
-                         mPrevY = event.getY();
-                         mPrevHeight = mShutterButton.getHeight();
-                         keyDown(KEY_S1);
-                         mS1Downed = true;
-                         Log.d(TAG, "S1 down");
-                         mSkipCount = SKIP_MOVE_COUNT;
-                         break;
-                     case MotionEvent.ACTION_MOVE:
-                         currY = event.getY();
-                         currHeight = mShutterButton.getHeight();
-                         if (mPrevY < currY) {
-                             if ((float)currHeight / (float)mPrevHeight > 0.9) {
-                                 layoutParams = (RelativeLayout.LayoutParams) mShutterButton.getLayoutParams();
-                                 layoutParams.setMargins(0, (int) (currY - mPrevY), 0, 0);
-                                 mShutterButton.setLayoutParams(layoutParams);
-                             }
-                         }
-                         if (mSkipCount == 0) {
-                             if (currHeight < mPrevHeight) {
-                                 if (!mS2Downed) {
-                                     keyDown(KEY_S2);
-                                     mS2Downed = true;
-                                     Log.d(TAG, "S2 down");
-                                 }
-                             } else {
-                                 if (mS2Downed) {
-                                     keyUp(KEY_S2);
-                                     mS2Downed = false;
-                                     Log.d(TAG, "S2 up");
-                                 }
-                             }
-                             mSkipCount = SKIP_MOVE_COUNT;
-                         } else {
-                             mSkipCount--;
-                         }
-                         break;
-                     case MotionEvent.ACTION_UP:
-                         layoutParams = (RelativeLayout.LayoutParams) mShutterButton.getLayoutParams();
-                         layoutParams.setMargins(0, 0, 0, 0);
-                         mShutterButton.setLayoutParams(layoutParams);
-                         if (mS2Downed) {
-                             keyUp(KEY_S2);
-                             mS2Downed = false;
-                             Log.d(TAG, "S2 up");
-                         }
-                         if (mS1Downed) {
-                             keyUp(KEY_S1);
-                             mS1Downed = false;
-                             Log.d(TAG, "S1 up");
-                         }
-                         return false;
-                     default:
-                         return false;
-                 }
-                 return true;
-             }
+                int action = event.getAction() & MotionEvent.ACTION_MASK;
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        mPrevY = event.getY();
+                        mPrevHeight = mShutterButton.getHeight();
+                        keyDown(KEY_S1);
+                        mS1Downed = true;
+                        Log.d(TAG, "S1 down");
+                        mSkipCount = SKIP_MOVE_COUNT;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        currY = event.getY();
+                        currHeight = mShutterButton.getHeight();
+                        if (mPrevY < currY) {
+                            if ((float)currHeight / (float)mPrevHeight > 0.9) {
+                                layoutParams = (RelativeLayout.LayoutParams) mShutterButton.getLayoutParams();
+                                layoutParams.setMargins(0, (int) (currY - mPrevY), 0, 0);
+                                mShutterButton.setLayoutParams(layoutParams);
+                            }
+                        }
+                        if (mSkipCount == 0) {
+                            if (currHeight < mPrevHeight) {
+                                if (!mS2Downed) {
+                                    keyDown(KEY_S2);
+                                    mS2Downed = true;
+                                    Log.d(TAG, "S2 down");
+                                }
+                            } else {
+                                if (mS2Downed) {
+                                    keyUp(KEY_S2);
+                                    mS2Downed = false;
+                                    Log.d(TAG, "S2 up");
+                                }
+                            }
+                            mSkipCount = SKIP_MOVE_COUNT;
+                        } else {
+                            mSkipCount--;
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        layoutParams = (RelativeLayout.LayoutParams) mShutterButton.getLayoutParams();
+                        layoutParams.setMargins(0, 0, 0, 0);
+                        mShutterButton.setLayoutParams(layoutParams);
+                        if (mS2Downed) {
+                            keyUp(KEY_S2);
+                            mS2Downed = false;
+                            Log.d(TAG, "S2 up");
+                        }
+                        if (mS1Downed) {
+                            keyUp(KEY_S1);
+                            mS1Downed = false;
+                            Log.d(TAG, "S1 up");
+                        }
+                        return false;
+                    default:
+                        return false;
+                }
+                return true;
+            }
         });
 
         mButtonEv = (TextView) findViewById(R.id.keyEV);
@@ -516,6 +468,33 @@ public class MainActivity extends AppCompatActivity
         });
 
         mTextViewStatus = (TextView) findViewById(R.id.textViewStatus);
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        setContentView(R.layout.activity_main);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//        });
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.setDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
     }
 
     protected void startNotifyReceiver() {

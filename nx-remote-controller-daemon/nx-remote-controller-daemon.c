@@ -35,17 +35,25 @@ static void print_error(const char *msg)
     perror(msg);
 }
 
+#define OLD_NX_XWIN_WIDTH 480
+#define OLD_NX_XWIN_HEIGHT 800
+
+#define OLD_NX_FRAME_WIDTH 800
 #define FRAME_WIDTH 720
 #define FRAME_HEIGHT 480
 
+#define OLD_NX_VIDEO_FRAME_SIZE (OLD_NX_FRAME_WIDTH * FRAME_HEIGHT * 3 / 2)
 #define VIDEO_FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 3 / 2)
 
-#define MMAP_SIZE 522496
+#define OLD_NX_MMAP_SIZE (OLD_NX_VIDEO_FRAME_SIZE + 4096)
+#define MMAP_SIZE (VIDEO_FRAME_SIZE + 4096)
 #define MMAP_SIZE_2 695296
 
 #define XWIN_SEGMENT_PIXELS 320
 #define XWIN_BUF_SIZE (2 + XWIN_SEGMENT_PIXELS * 4) // 2 bytes (INDEX) + 320 pixels (BGRA)
+#define OLD_NX_XWIN_NUM_SEGMENTS (OLD_NX_XWIN_WIDTH * OLD_NX_XWIN_HEIGHT / XWIN_SEGMENT_PIXELS)
 #define XWIN_NUM_SEGMENTS (FRAME_WIDTH * FRAME_HEIGHT / XWIN_SEGMENT_PIXELS)
+#define OLD_NX_XWIN_FRAME_SIZE (OLD_NX_XWIN_WIDTH * OLD_NX_XWIN_HEIGHT * 4)
 #define XWIN_FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 4)
 
 #define PORT_NOTIFY 5677
@@ -57,8 +65,8 @@ static void print_error(const char *msg)
 #define XWD_SKIP_BYTES 3179
 #define DISCOVERY_PACKET_SIZE 32
 
-#define APP_PATH "/opt/usr/apps/nx-remote-controller-mod"
-//#define APP_PATH "/opt/storage/sdcard/remote"
+//#define APP_PATH "/opt/usr/apps/nx-remote-controller-mod"
+#define APP_PATH "/mnt/mmc/remote"
 #define POPUP_TIMEOUT_SH_COMMAND APP_PATH "/popup_timeout.sh"
 #define LCD_CONTROL_SH_COMMAND APP_PATH "/lcd_control.sh"
 #define NX_INPUT_INJECTOR_COMMAND "chroot " APP_PATH "/tools nx-input-injector"
@@ -77,6 +85,28 @@ static void print_error(const char *msg)
 
 #define PING_TIMEOUT_MS 5000
 
+typedef enum {
+    NX_MODEL_UNKNOWN = 0,
+
+    // new NX models
+    NX_MODEL_NX1     = 1,
+    NX_MODEL_NX500   = 500,
+
+    // old NX models
+    NX_MODEL_NX300   = 300,
+    NX_MODEL_NX300M  = 301,
+    NX_MODEL_NX2000  = 2000,
+    NX_MODEL_NX3000  = 3000,
+} NxModel;
+
+static off_t s_addrs_nx300[] = {
+    0xc6a14000,
+    0xc6db6000,
+    0xc7158000,
+};
+
+#define S_ADDRS_NX300_SIZE (sizeof(s_addrs_nx300) / sizeof(s_addrs_nx300[0]))
+
 static off_t s_addrs[] = {
     0xbbaea500,
     0xbbb68e00,
@@ -94,7 +124,7 @@ static off_t s_addrs[] = {
 //    0x9f8f7000,
 };
 
-#define S_ADDRS_SIZE sizeof(s_addrs)
+#define S_ADDRS_SIZE (sizeof(s_addrs) / sizeof(s_addrs[0]))
 
 typedef struct {
     int server_fd;
@@ -109,6 +139,62 @@ typedef struct {
     OnConnect on_connect;
     int *socket_connect_count;
 } ListenSocketData;
+
+static NxModel s_nx_model = NX_MODEL_UNKNOWN;
+static char s_nx_model_name[16];
+static NxModel get_nx_model()
+{
+    char firmware_version[256];
+    char nx_model_name[256];
+    FILE *version_info;
+    
+    log("get_nx_model");
+
+    version_info = fopen("/etc/version.info", "r");
+    if (version_info != NULL) {
+        if (fgets(firmware_version, sizeof(firmware_version), version_info) != NULL) {
+            log("firmware_version = %s", firmware_version);
+        }
+        if (fgets(nx_model_name, sizeof(nx_model_name), version_info) != NULL) {
+            log("nx_model_name = %s", nx_model_name);
+        }
+        fclose(version_info);
+    } else {
+        die("failed to open /etc/version.info");
+    }
+
+    nx_model_name[strlen(nx_model_name) - 1] = '\0';
+    snprintf(s_nx_model_name, 16, "%s", nx_model_name);
+
+    if (strcmp(nx_model_name, "NX1") == 0) {
+        return NX_MODEL_NX1;
+    } else if (strcmp(nx_model_name, "NX300") == 0) {
+        return NX_MODEL_NX300;
+    } else if (strcmp(nx_model_name, "NX300M") == 0) { // TODO: check
+        return NX_MODEL_NX300M;
+    } else if (strcmp(nx_model_name, "NX2000") == 0) { // TODO: check
+        return NX_MODEL_NX2000;
+    } else if (strcmp(nx_model_name, "NX3000") == 0) { // TODO: check
+        return NX_MODEL_NX3000;
+    } else if (strcmp(nx_model_name, "NX500") == 0) {
+        return NX_MODEL_NX500;
+    }
+
+    return NX_MODEL_UNKNOWN;
+}
+
+static bool is_new_nx_model()
+{
+    if (s_nx_model == NX_MODEL_NX1 || s_nx_model == NX_MODEL_NX500) {
+        return true;
+    }
+    return false;
+}
+
+static bool is_old_nx_model()
+{
+    return !is_new_nx_model();
+}
 
 static char *get_port_name(int port)
 {
@@ -149,10 +235,12 @@ static void *start_notify(StreamerData *data)
 
     free(data);
 
-    hevc = fopen("/sys/kernel/debug/pmu/hevc/state", "r");
-    if (hevc == NULL) {
-        print_error("fopen() failed");
-        goto error;
+    if (is_new_nx_model()) {
+        hevc = fopen("/sys/kernel/debug/pmu/hevc/state", "r");
+        if (hevc == NULL) {
+            print_error("fopen() failed");
+            goto error;
+        }
     }
 
     //log("xev-nx command = %s", XEV_NX_COMMAND);
@@ -176,31 +264,33 @@ static void *start_notify(StreamerData *data)
     fcntl(xev_fd, F_SETFL, flags);
 
     while (true) {
-        // hevc check
-        clearerr(hevc);
-        rewind(hevc);
-        memset(buf, 0, sizeof(buf));
-        fread(buf, 1, sizeof(buf), hevc);
-        if (ferror(hevc) != 0) {
-            log("ferror()");
-        } else if (feof(hevc) != 0) {
-            //log("read_size = %d, buf = %s", read_size, buf);
-            if (strncmp(buf, "on", 2) == 0) {
-                if (hevc_state != HEVC_STATE_ON) {
-                    hevc_state = HEVC_STATE_ON;
-                    write_size = write(client_fd, "hevc=on\n", 8);
-                    if (write_size == -1) {
-                        print_error("write() failed!");
-                        goto error;
+        if (is_new_nx_model()) {
+            // hevc check
+            clearerr(hevc);
+            rewind(hevc);
+            memset(buf, 0, sizeof(buf));
+            fread(buf, 1, sizeof(buf), hevc);
+            if (ferror(hevc) != 0) {
+                log("ferror()");
+            } else if (feof(hevc) != 0) {
+                //log("read_size = %d, buf = %s", read_size, buf);
+                if (strncmp(buf, "on", 2) == 0) {
+                    if (hevc_state != HEVC_STATE_ON) {
+                        hevc_state = HEVC_STATE_ON;
+                        write_size = write(client_fd, "hevc=on\n", 8);
+                        if (write_size == -1) {
+                            print_error("write() failed!");
+                            goto error;
+                        }
                     }
-                }
-            } else if (strncmp(buf, "off", 3) == 0) {
-                if (hevc_state != HEVC_STATE_OFF) {
-                    hevc_state = HEVC_STATE_OFF;
-                    write_size = write(client_fd, "hevc=off\n", 9);
-                    if (write_size == -1) {
-                        print_error("write() failed!");
-                        goto error;
+                } else if (strncmp(buf, "off", 3) == 0) {
+                    if (hevc_state != HEVC_STATE_OFF) {
+                        hevc_state = HEVC_STATE_OFF;
+                        write_size = write(client_fd, "hevc=off\n", 9);
+                        if (write_size == -1) {
+                            print_error("write() failed!");
+                            goto error;
+                        }
                     }
                 }
             }
@@ -268,8 +358,10 @@ static void *start_notify(StreamerData *data)
     }
 
 error:
-    if (hevc != NULL && fclose(hevc)) {
-        print_error("fclose() failed!");
+    if (is_new_nx_model()) {
+        if (hevc != NULL && fclose(hevc)) {
+            print_error("fclose() failed!");
+        }
     }
     if (xev_pid != 0 && kill(xev_pid, SIGKILL) == -1) {
         print_error("kill() failed!");
@@ -287,7 +379,8 @@ static void *mmap_lcd(const int fd, const off_t offset)
 {
     off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
     //log("offset = %llu, pa_offset = %llu", (unsigned long long)offset, (unsigned long long)pa_offset);
-    void *p = mmap(NULL, MMAP_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, pa_offset);
+    const size_t length = is_new_nx_model() ? MMAP_SIZE : OLD_NX_MMAP_SIZE;
+    void *p = mmap(NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, pa_offset);
     if (p == MAP_FAILED) {
         die("mmap() failed");
     }
@@ -298,7 +391,8 @@ static void *mmap_lcd(const int fd, const off_t offset)
 static void munmap_lcd(void *addr, const off_t offset)
 {
     off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
-    if (munmap(addr - (offset - pa_offset), MMAP_SIZE) == -1) {
+    const size_t length = is_new_nx_model() ? MMAP_SIZE : OLD_NX_MMAP_SIZE;
+    if (munmap(addr - (offset - pa_offset), length) == -1) {
         die("munmap() failed");
     }
 }
@@ -326,6 +420,8 @@ static void *start_video_capture(StreamerData *data)
 #ifdef DEBUG
     long long capture_start_time, capture_end_time;
 #endif
+    const int frame_width = is_new_nx_model() ? FRAME_WIDTH : OLD_NX_FRAME_WIDTH;
+    const int video_frame_size = is_new_nx_model() ? VIDEO_FRAME_SIZE : OLD_NX_VIDEO_FRAME_SIZE;
     bool err = false;
 
     free(data);
@@ -335,8 +431,16 @@ static void *start_video_capture(StreamerData *data)
         die("open() error");
     }
 
-    for (i = 0; i < S_ADDRS_SIZE; i++) {
-        addrs[i] = mmap_lcd(fd, s_addrs[i]);
+    if (is_new_nx_model()) {
+        for (i = 0; i < S_ADDRS_SIZE; i++) {
+            log("addr = 0x%lx", s_addrs[i]);
+            addrs[i] = mmap_lcd(fd, s_addrs[i]);
+        }
+    } else {
+        for (i = 0; i < S_ADDRS_NX300_SIZE; i++) {
+            log("addr = 0x%lx", s_addrs_nx300[i]);
+            addrs[i] = mmap_lcd(fd, s_addrs_nx300[i]);
+        }
     }
 
 #ifdef DEBUG
@@ -351,20 +455,20 @@ static void *start_video_capture(StreamerData *data)
             break;
         }
 
-        for (i = 0; i < S_ADDRS_SIZE; i++) {
+        for (i = 0; i < (is_new_nx_model() ? S_ADDRS_SIZE : S_ADDRS_NX300_SIZE); i++) {
             const char *p = addrs[i];
 
             hash = 0;
-            for (j = 0; j < 720*2; j++) {
+            for (j = 0; j < frame_width * 2; j++) {
                 hash += p[j];
             }
             if (hashs[i] != 0 && hash != hashs[i]) {
-                if (write(client_fd, p, VIDEO_FRAME_SIZE) == -1) {
+                if (write(client_fd, p, video_frame_size) == -1) {
                     log("write() failed!");
                     err = true;
                     break;
                 }
-                //log("[VideoCapture] %d, hash = %d (changed!)", i, hash);
+                log("[VideoCapture] %d, hash = %d (changed!)", i, hash);
             }
 
             hashs[i] = hash;
@@ -389,8 +493,14 @@ static void *start_video_capture(StreamerData *data)
     log("time = %f", (capture_end_time - capture_start_time) / 1000.0);
 #endif
 
-    for (i = 0; i < 4; i++) {
-        munmap_lcd(addrs[i], s_addrs[i]);
+    if (is_new_nx_model()) {
+        for (i = 0; i < S_ADDRS_SIZE; i++) {
+            munmap_lcd(addrs[i], s_addrs[i]);
+        }
+    } else {
+        for (i = 0; i < S_ADDRS_NX300_SIZE; i++) {
+            munmap_lcd(addrs[i], s_addrs_nx300[i]);
+        }
     }
 
     if (close(fd) == -1) {
@@ -417,9 +527,10 @@ static void *start_xwin_capture(StreamerData *data)
     unsigned char buf[XWIN_BUF_SIZE];
     size_t skip_size, read_size, offset;
     ssize_t write_size;
-    int hashs[XWIN_NUM_SEGMENTS] = {0,};
-    int hash, hash_index;;
-
+    int hashs[OLD_NX_XWIN_NUM_SEGMENTS] = {0,};
+    int hash, hash_index;
+    const int xwin_frame_size = is_new_nx_model() ?
+                            XWIN_FRAME_SIZE : OLD_NX_XWIN_FRAME_SIZE;
     bool err = false;
 
     free(data);
@@ -495,7 +606,7 @@ static void *start_xwin_capture(StreamerData *data)
                             break;
                         }
                     }
-                    if (offset == XWIN_FRAME_SIZE) {
+                    if (offset == xwin_frame_size) {
                         // notify end of frame
                         buf[0] = 0x0f;
                         buf[1] = 0xff;
@@ -767,7 +878,7 @@ static void *listen_socket_func(void *thread_data)
 
         data->server_fd = server_fd;
         data->client_fd = client_fd;
-        data->fps = 5;
+        data->fps = 4;
 
         (*socket_connect_count)++;
         if (pthread_create(&thread, NULL,
@@ -847,6 +958,7 @@ static void broadcast_discovery_packet(const int port,
     sin.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
     while (true) {
+        log("socket_connect_count = %d", *socket_connect_count);
         if (*socket_connect_count == 0) {
             char msg[DISCOVERY_PACKET_SIZE] = {0,};
             char command_line[256];
@@ -854,13 +966,14 @@ static void broadcast_discovery_packet(const int port,
                     " 3 NXRemoteController disconnected.", 256);
 
             if (need_show_disconnected_msg) {
-                run_command(command_line);
+                //run_command(command_line); // FIXME
                 need_show_disconnected_msg = false;
             }
 
-            log("broadcasting discovery packet...");
             // TODO: get camera model
-            strncpy(msg, "NX_REMOTE|1.0|NX500|", sizeof(msg)); // HEADER|VERSION|MODEL|
+            // HEADER|VERSION|MODEL|
+            snprintf(msg, sizeof(msg), "NX_REMOTE|1.0|%s|", s_nx_model_name); // TODO: version
+            log("broadcasting discovery packet... [%s]", msg);
 
             if (sendto(sock, msg, sizeof(msg), 0, (struct sockaddr *)&sin,
                        sizeof(struct sockaddr_in)) == -1) {
@@ -883,6 +996,9 @@ int main(int argc, char **argv)
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
+
+    s_nx_model = get_nx_model();
+    log("nx_model = %d", s_nx_model);
 
     listen_socket(PORT_NOTIFY, start_notify, &socket_connect_count);
     listen_socket(PORT_VIDEO, start_video_capture, &socket_connect_count);

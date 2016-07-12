@@ -13,6 +13,12 @@ public class Configurations {
     public static final int FRAME_WIDTH = 720;
     public static final int FRAME_HEIGHT = 480;
     public static final int FRAME_VIDEO_SIZE = FRAME_WIDTH * FRAME_HEIGHT * 3 / 2; // NV12
+
+    public static final int OLD_NX_LCD_WIDTH = 480;
+    public static final int OLD_NX_LCD_HEIGHT = 800;
+    public static final int OLD_NX_FRAME_WIDTH = 800;
+    public static final int OLD_NX_FRAME_VIDEO_SIZE = OLD_NX_FRAME_WIDTH * FRAME_HEIGHT * 3 / 2;
+
     public static final int XWIN_SEGMENT_NUM_PIXELS = 320;
     public static final int XWIN_SEGMENT_SIZE = 2 + (XWIN_SEGMENT_NUM_PIXELS * 4); // 2 bytes (INDEX) + 320 pixels (BGRA)
     public static final int DISCOVERY_PACKET_SIZE = 32;

@@ -8,13 +8,7 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.util.Arrays;
 
-import static com.mewlips.nxremote.Configurations.FRAME_HEIGHT;
-import static com.mewlips.nxremote.Configurations.FRAME_VIDEO_SIZE;
-import static com.mewlips.nxremote.Configurations.FRAME_WIDTH;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_FHD_HD;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_UHD;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_VGA;
-import static com.mewlips.nxremote.Configurations.VIDEO_STREAMER_PORT;
+import static com.mewlips.nxremote.Configurations.*;
 
 /**
  * Created by mewlips on 16. 6. 29.
@@ -27,12 +21,20 @@ public class VideoPlayer extends Thread {
     private Socket mSocket;
     private InputStream mReader;
 
-    private byte[] mBuffer = new byte[FRAME_VIDEO_SIZE];
+    private byte[] mBuffer;
     private int mVideoSize = 0;
+    private final int mFrameVideoSize;
 
     public VideoPlayer(NXCameraInfo cameraInfo, MainActivity activity) {
         mCameraInfo = cameraInfo;
         mActivity = activity;
+        if (cameraInfo.isNewNxModel()) {
+            mBuffer = new byte[FRAME_VIDEO_SIZE];
+            mFrameVideoSize = FRAME_VIDEO_SIZE;
+        } else {
+            mBuffer = new byte[OLD_NX_FRAME_VIDEO_SIZE];
+            mFrameVideoSize = OLD_NX_FRAME_VIDEO_SIZE;
+        }
     }
 
     @Override
@@ -51,12 +53,12 @@ public class VideoPlayer extends Thread {
         while (mSocket != null) {
             int readSize = 0;
             try {
-                while (readSize != FRAME_VIDEO_SIZE) {
+                while (readSize != mFrameVideoSize) {
                     if (mReader == null) {
                         readSize = -1;
                         break;
                     }
-                    readSize += mReader.read(mBuffer, readSize, FRAME_VIDEO_SIZE - readSize);
+                    readSize += mReader.read(mBuffer, readSize, mFrameVideoSize - readSize);
                     if (readSize == -1) {
                         break;
                     }
@@ -72,8 +74,8 @@ public class VideoPlayer extends Thread {
 
                 break;
             }
-            if (readSize == FRAME_VIDEO_SIZE) {
-                int width = FRAME_WIDTH;
+            if (readSize == mFrameVideoSize) {
+                int width = mCameraInfo.isNewNxModel() ? FRAME_WIDTH : OLD_NX_FRAME_WIDTH;
                 int height = FRAME_HEIGHT;
                 if (mVideoSize == VIDEO_SIZE_VGA) {
                     width = 640;
