@@ -1,7 +1,16 @@
 #!/bin/sh
 
-export PATH=$PATH:/home/mewlips/devices/nx500/NX500_opensource/kernel/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_GNU_Linux/bin
-
-arm-none-linux-gnueabi-gcc nx-remote-controller-daemon.c -DDEBUG -O4 -Wall -lpthread -o nx-remote-controller-daemon && \
-     cp -fv nx-remote-controller-daemon ../install/app/ && \
-     cp -fv nx-remote-controller-daemon ../sd_install/remote/
+arm-none-linux-gnueabi-gcc \
+        -DDEBUG -O4 -Wall -lpthread \
+        -o nx-remote-controller-daemon \
+        command.c \
+        executor.c \
+        network.c \
+        notify.c \
+        main.c \
+        nx_model.c \
+        util.c \
+        video.c \
+        xwin.c \
+    && cp -fv nx-remote-controller-daemon ../install/app/ \
+    && cp -fv nx-remote-controller-daemon ../sd_install/remote/

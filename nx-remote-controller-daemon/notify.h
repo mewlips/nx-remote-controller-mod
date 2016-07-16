@@ -1,0 +1,11 @@
+#ifndef NOTIFY_H_INCLUDED
+#define NOTIFY_H_INCLUDED
+
+#include "network.h"
+
+extern void notify_video_socket_closed(void);
+extern void notify_xwin_socket_closed(void);
+extern void notify_executor_socket_closed(void);
+extern void *start_notify(Sockets *sockets);
+
+#endif
