@@ -1,18 +1,21 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
-#include <stdbool.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stdlib.h>
 #include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "executor.h"
 #include "command.h"
+#include "executor.h"
 #include "util.h"
 #include "video.h"
 #include "xwin.h"
+
+#define LCD_CONTROL_SH_COMMAND "lcd_control.sh"
+#define NX_INPUT_INJECTOR_COMMAND "nx-input-injector"
 
 void *start_executor(Sockets *data)
 {
@@ -43,7 +46,9 @@ void *start_executor(Sockets *data)
 
     print_log("executor started.");
 
-    inject_input_pipe = popen(NX_INPUT_INJECTOR_COMMAND, "w");
+    snprintf(command_line, sizeof(command_line), "%s %s",
+             get_chroot_command(), NX_INPUT_INJECTOR_COMMAND);
+    inject_input_pipe = popen(command_line, "w");
     if (inject_input_pipe == NULL) {
         print_error("pope() failed");
         goto error;
@@ -112,14 +117,13 @@ void *start_executor(Sockets *data)
             set_video_fps(atoi(command_line + 5));
         } else if (strncmp("xfps=", command_line, 5) == 0) {
             set_xwin_fps(atoi(command_line + 5));
-        } else if (strncmp("lcd=on", command_line, 6) == 0) {
-            system(LCD_CONTROL_SH_COMMAND " on");
-        } else if (strncmp("lcd=off", command_line, 7) == 0) {
-            system(LCD_CONTROL_SH_COMMAND " off");
-        } else if (strncmp("lcd=video", command_line, 9) == 0) {
-            system(LCD_CONTROL_SH_COMMAND " video");
-        } else if (strncmp("lcd=osd", command_line, 7) == 0) {
-            system(LCD_CONTROL_SH_COMMAND " osd");
+        } else if (strncmp("lcd=", command_line, 4) == 0) {
+            char command[256];
+            char *arg = command_line + 4;
+            snprintf(command, sizeof(command), "%s/%s %s",
+                     get_app_path(), LCD_CONTROL_SH_COMMAND, arg);
+            //print_log("command = %s", command);
+            system(command);
         } else if (strncmp("ping", command_line, 4) == 0) {
             last_ping_time = get_current_time();
         }

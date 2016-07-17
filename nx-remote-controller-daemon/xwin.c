@@ -1,11 +1,11 @@
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "xwin.h"
 #include "nx_model.h"
 #include "util.h"
+#include "xwin.h"
 
 #define XWIN_SEGMENT_PIXELS 320
 #define XWIN_BUF_SIZE (2 + XWIN_SEGMENT_PIXELS * 4) // 2 bytes (INDEX) + 320 pixels (BGRA)
@@ -133,7 +133,7 @@ void *start_xwin_capture(Sockets *sockets)
                             break;
                         }
 
-                        if (skip_count != 1080 - 1) {
+                        if (skip_count != XWIN_NUM_SEGMENTS - 1) {
                             print_log("[XWinCapture] count = %d, skip_count = %d",
                                 count, skip_count);
                         }

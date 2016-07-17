@@ -1,12 +1,12 @@
 #include <signal.h>
 
-#include "util.h"
-#include "nx_model.h"
-#include "network.h"
-#include "video.h"
 #include "executor.h"
-#include "xwin.h"
+#include "network.h"
 #include "notify.h"
+#include "nx_model.h"
+#include "util.h"
+#include "video.h"
+#include "xwin.h"
 
 int main(int argc, char **argv)
 {

@@ -1,11 +1,10 @@
 #!/bin/bash
 
-killall -9 dfmsd
 killall nx-input-injector
 killall xev-nx
 killall nx-remote-controller-daemon
 
-APP_PATH=/opt/storage/sdcard/remote/
+APP_PATH=/mnt/mmc/remote
 
 $APP_PATH/lcd_control.sh on
 if [ "$1" == "debug" ]; then

@@ -1,15 +1,15 @@
-#include <sys/mman.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "util.h"
 #include "network.h"
-#include "video.h"
 #include "nx_model.h"
+#include "util.h"
+#include "video.h"
 
 //#define MMAP_SIZE_2 695296 // FIXME
 #define DEV_MEM_PATH "/dev/mem"

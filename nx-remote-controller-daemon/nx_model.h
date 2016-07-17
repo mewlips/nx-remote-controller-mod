@@ -1,8 +1,8 @@
 #ifndef NX_MODEL_H_INCLUDED
 #define NX_MODEL_H_INCLUDED
 
-#include <sys/types.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 typedef enum {
     NX_MODEL_UNKNOWN = 0,

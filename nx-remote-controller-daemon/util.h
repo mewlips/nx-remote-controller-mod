@@ -1,6 +1,8 @@
 #ifndef UTIL_H_INCLUDED
 #define UTIL_H_INCLUDED
 
+#include <stdio.h>
+
 #ifdef DEBUG
 #define print_log(fmt, ...) \
     do { \

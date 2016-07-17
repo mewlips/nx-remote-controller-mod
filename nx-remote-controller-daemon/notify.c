@@ -1,16 +1,16 @@
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <signal.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include "command.h"
 #include "notify.h"
 #include "nx_model.h"
-#include "command.h"
 #include "util.h"
 
 #define HEVC_STATE_UNKNOWN (-1)
@@ -40,6 +40,7 @@ void *start_notify(Sockets *sockets)
 {
     int client_socket = sockets->client_socket;
     FILE *xev_pipe = NULL;
+    char command[256];
     char buf[256];
     int xev_fd;
     int flags;
@@ -60,8 +61,12 @@ void *start_notify(Sockets *sockets)
         }
     }
 
-    //print_log("xev-nx command = %s", XEV_NX_COMMAND);
-    xev_pipe = popen(XEV_NX_COMMAND, "r");
+    snprintf(command, sizeof(command),
+            "%s xev-nx -p -id "
+            "\"$(%s xdotool search --class di-camera-app)\"",
+            get_chroot_command(), get_chroot_command());
+    //print_log("xev-nx command = %s", command);
+    xev_pipe = popen(command, "r");
     if (xev_pipe == NULL) {
         print_error("popen() failed!");
         goto error;

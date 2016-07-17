@@ -1,21 +1,23 @@
-#include <sys/socket.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <netinet/in.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <stdbool.h>
 
-#include "network.h"
-#include "util.h"
-#include "video.h"
-#include "notify.h"
 #include "command.h"
+#include "network.h"
+#include "notify.h"
 #include "nx_model.h"
+#include "util.h"
+#include "version.h"
+#include "video.h"
 
 #define DISCOVERY_PACKET_SIZE 32
+#define POPUP_TIMEOUT_SH_COMMAND "popup_timeout.sh"
 
 static int socket_connect_count;
 
@@ -167,17 +169,18 @@ void broadcast_discovery_packet(const int port)
         if (socket_connect_count == 0) {
             char msg[DISCOVERY_PACKET_SIZE] = {0,};
             char command_line[256];
-            strncpy(command_line, POPUP_TIMEOUT_SH_COMMAND 
-                    " 3 NXRemoteController disconnected.", 256);
+            snprintf(command_line, sizeof(command_line),
+                     "%s/%s 3 NXRemoteController disconnected.",
+                     get_app_path(), POPUP_TIMEOUT_SH_COMMAND);
 
             if (need_show_disconnected_msg) {
                 //run_command(command_line); // FIXME
                 need_show_disconnected_msg = false;
             }
 
-            // TODO: get camera model
             // HEADER|VERSION|MODEL|
-            snprintf(msg, sizeof(msg), "NX_REMOTE|1.0|%s|", get_nx_model_name()); // TODO: version
+            snprintf(msg, sizeof(msg), "NX_REMOTE|%s|%s|",
+                     VERSION, get_nx_model_name());
             print_log("broadcasting discovery packet... [%s]", msg);
 
             if (sendto(sock, msg, sizeof(msg), 0, (struct sockaddr *)&sin,
