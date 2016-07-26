@@ -33,7 +33,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.lukedeighton.wheelview.WheelView;
 import com.lukedeighton.wheelview.adapter.WheelAdapter;
@@ -42,8 +41,56 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.mewlips.nxremote.Configurations.*;
-import static com.mewlips.nxremote.NXKeys.*;
+import static com.mewlips.nxremote.Configurations.FRAME_HEIGHT;
+import static com.mewlips.nxremote.Configurations.FRAME_WIDTH;
+import static com.mewlips.nxremote.Configurations.GET_MOV_SIZE_COMMAND_NX500;
+import static com.mewlips.nxremote.Configurations.INJECT_INPUT_COMMAND;
+import static com.mewlips.nxremote.Configurations.LCD_OFF_COMMAND;
+import static com.mewlips.nxremote.Configurations.LCD_ON_COMMAND;
+import static com.mewlips.nxremote.Configurations.LCD_VIDEO_COMMAND;
+import static com.mewlips.nxremote.Configurations.MOD_GUI_COMMAND_NX500;
+import static com.mewlips.nxremote.Configurations.OLD_NX_FRAME_WIDTH;
+import static com.mewlips.nxremote.Configurations.OLD_NX_LCD_HEIGHT;
+import static com.mewlips.nxremote.Configurations.OLD_NX_LCD_WIDTH;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_FHD_HD;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_NORMAL;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_UHD;
+import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_VGA;
+import static com.mewlips.nxremote.NXKeys.KEY_AEL;
+import static com.mewlips.nxremote.NXKeys.KEY_DEL;
+import static com.mewlips.nxremote.NXKeys.KEY_DOWN;
+import static com.mewlips.nxremote.NXKeys.KEY_EV;
+import static com.mewlips.nxremote.NXKeys.KEY_FN;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CCW;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CW;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG_CCW;
+import static com.mewlips.nxremote.NXKeys.KEY_JOG_CW;
+import static com.mewlips.nxremote.NXKeys.KEY_LEFT;
+import static com.mewlips.nxremote.NXKeys.KEY_MENU;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_A;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_A_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM2;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_M;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_M_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_P;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_P_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_S;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_MODE_S_GET;
+import static com.mewlips.nxremote.NXKeys.KEY_OK;
+import static com.mewlips.nxremote.NXKeys.KEY_PB;
+import static com.mewlips.nxremote.NXKeys.KEY_REC;
+import static com.mewlips.nxremote.NXKeys.KEY_RIGHT;
+import static com.mewlips.nxremote.NXKeys.KEY_S1;
+import static com.mewlips.nxremote.NXKeys.KEY_S2;
+import static com.mewlips.nxremote.NXKeys.KEY_UP;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -566,8 +613,8 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Toast.makeText(this, "Not implemented yet.", Toast.LENGTH_SHORT).show();
-            return true;
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
         } else if (id == R.id.action_open_mod) {
             runCommand(MOD_GUI_COMMAND_NX500);
         } else if (id == R.id.action_wifi_settings) {

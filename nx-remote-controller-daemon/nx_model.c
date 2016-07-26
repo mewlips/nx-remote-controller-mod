@@ -77,6 +77,16 @@ bool is_old_nx_model(void)
     return !is_new_nx_model();
 }
 
+bool is_nx1(void)
+{
+    return get_nx_model() == NX_MODEL_NX1;
+}
+
+bool is_nx500(void)
+{
+    return get_nx_model() == NX_MODEL_NX500;
+}
+
 #define OLD_NX_FRAME_WIDTH 800
 #define FRAME_WIDTH 720
 #define FRAME_HEIGHT 480
@@ -140,10 +150,19 @@ static off_t s_addrs_nx500[] = {
 //    0x9f8f7000,
 };
 
+static off_t s_addrs_nx1[] = {
+    0xfb1be000,
+    0xfb2de000,
+    0xfb51e000,
+    0xfb63e000,
+    0xfb75e000,
+};
+
 off_t get_video_addr(int index)
 {
-    // FIXME:
-    if (is_new_nx_model()) {
+    if (is_nx1()) {
+        return s_addrs_nx1[index];
+    } else if (is_nx500()) {
         return s_addrs_nx500[index];
     } else {
         return s_addrs_nx300[index];
@@ -152,8 +171,9 @@ off_t get_video_addr(int index)
 
 int get_num_video_addrs(void)
 {
-    // FIXME:
-    if (is_new_nx_model()) {
+    if (is_nx1()) {
+        return ARRAY_SIZE(s_addrs_nx1);
+    } else if (is_new_nx_model()) {
         return ARRAY_SIZE(s_addrs_nx500);
     } else {
         return ARRAY_SIZE(s_addrs_nx300);

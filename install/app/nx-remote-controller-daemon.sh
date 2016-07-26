@@ -8,11 +8,13 @@ killall nx-input-injector
 killall xev-nx
 killall nx-remote-controller-daemon
 
+di_camera_app_id=$(chroot $APP_PATH/tools xdotool search --class di-camera-app)
+
 $APP_PATH/lcd_control.sh on
 if [ "$1" == "debug" ]; then
-    $APP_PATH/nx-remote-controller-daemon
+    $APP_PATH/nx-remote-controller-daemon $di_camera_app_id
 else
-    $APP_PATH/nx-remote-controller-daemon &> /dev/null &
+    $APP_PATH/nx-remote-controller-daemon $di_camera_app_id &> /dev/null &
 fi
 
 $POPUP_TIMEOUT " [ nx-remote-controller-mod ] " 2 &

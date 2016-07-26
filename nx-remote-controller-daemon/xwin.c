@@ -14,9 +14,14 @@
 
 static int s_xwin_fps;
 static bool s_stopped;
+static int s_di_camera_app_id;
 
-void init_xwin(void)
+void init_xwin(int di_camera_app_id)
 {
+    s_di_camera_app_id = di_camera_app_id;
+    if (s_di_camera_app_id != 0) {
+        print_log("di-camera-app window-id : %d", di_camera_app_id);
+    }
     set_xwin_fps(get_default_xwin_fps());
 }
 
@@ -45,8 +50,16 @@ void *start_xwin_capture(Sockets *sockets)
     int hash, hash_index;
     const int xwin_frame_size = get_xwin_frame_size();
     bool err = false;
+    char xwd_command[64];
 
     free(sockets);
+
+    if (s_di_camera_app_id != 0) {
+        snprintf(xwd_command, sizeof(xwd_command),
+                 "xwd -id %d", s_di_camera_app_id);
+    } else {
+        snprintf(xwd_command, sizeof(xwd_command), "xwd -root");
+    }
 
     hashs = (int *)calloc(XWIN_NUM_SEGMENTS, sizeof(int *));
 
@@ -60,7 +73,7 @@ void *start_xwin_capture(Sockets *sockets)
         hash = 0;
         err = false;
 
-        xwd_out = popen("xwd -root", "r");
+        xwd_out = popen(xwd_command, "r");
         if (xwd_out == NULL) {
             print_error("popen() failed");
             continue;

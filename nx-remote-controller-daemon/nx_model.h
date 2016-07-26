@@ -24,6 +24,8 @@ extern const char *get_nx_model_name(void);
 extern const char *get_nx_model_version(void);
 extern bool is_new_nx_model(void);
 extern bool is_old_nx_model(void);
+extern bool is_nx1(void);
+extern bool is_nx500(void);
 extern int get_frame_width(void);
 extern int get_frame_height(void);
 extern int get_frame_size(void);
