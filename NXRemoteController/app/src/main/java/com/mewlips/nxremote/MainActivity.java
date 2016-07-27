@@ -41,56 +41,8 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.mewlips.nxremote.Configurations.FRAME_HEIGHT;
-import static com.mewlips.nxremote.Configurations.FRAME_WIDTH;
-import static com.mewlips.nxremote.Configurations.GET_MOV_SIZE_COMMAND_NX500;
-import static com.mewlips.nxremote.Configurations.INJECT_INPUT_COMMAND;
-import static com.mewlips.nxremote.Configurations.LCD_OFF_COMMAND;
-import static com.mewlips.nxremote.Configurations.LCD_ON_COMMAND;
-import static com.mewlips.nxremote.Configurations.LCD_VIDEO_COMMAND;
-import static com.mewlips.nxremote.Configurations.MOD_GUI_COMMAND_NX500;
-import static com.mewlips.nxremote.Configurations.OLD_NX_FRAME_WIDTH;
-import static com.mewlips.nxremote.Configurations.OLD_NX_LCD_HEIGHT;
-import static com.mewlips.nxremote.Configurations.OLD_NX_LCD_WIDTH;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_FHD_HD;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_NORMAL;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_UHD;
-import static com.mewlips.nxremote.Configurations.VIDEO_SIZE_VGA;
-import static com.mewlips.nxremote.NXKeys.KEY_AEL;
-import static com.mewlips.nxremote.NXKeys.KEY_DEL;
-import static com.mewlips.nxremote.NXKeys.KEY_DOWN;
-import static com.mewlips.nxremote.NXKeys.KEY_EV;
-import static com.mewlips.nxremote.NXKeys.KEY_FN;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CCW;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG1_CW;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG_CCW;
-import static com.mewlips.nxremote.NXKeys.KEY_JOG_CW;
-import static com.mewlips.nxremote.NXKeys.KEY_LEFT;
-import static com.mewlips.nxremote.NXKeys.KEY_MENU;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_A;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_A_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM1_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_CUSTOM2;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_M;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_M_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_P;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_P_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_S;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SAS_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SCENE_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_SMART_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_MODE_S_GET;
-import static com.mewlips.nxremote.NXKeys.KEY_OK;
-import static com.mewlips.nxremote.NXKeys.KEY_PB;
-import static com.mewlips.nxremote.NXKeys.KEY_REC;
-import static com.mewlips.nxremote.NXKeys.KEY_RIGHT;
-import static com.mewlips.nxremote.NXKeys.KEY_S1;
-import static com.mewlips.nxremote.NXKeys.KEY_S2;
-import static com.mewlips.nxremote.NXKeys.KEY_UP;
+import static com.mewlips.nxremote.Configurations.*;
+import static com.mewlips.nxremote.NXKeys.*;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -136,7 +88,11 @@ public class MainActivity extends AppCompatActivity
         mVideoDrawEnabled = false;
         runCommand("vfps=1");
         runCommand("xfps=1");
-        runCommand(GET_MOV_SIZE_COMMAND_NX500); // NX500
+        if (mCameraInfo.isNx1()) {
+            runCommand(GET_MOV_SIZE_COMMAND_NX1);
+        } else if (mCameraInfo.isNx500()) {
+            runCommand(GET_MOV_SIZE_COMMAND_NX500);
+        }
     }
 
     protected void onRecordStopped() {
@@ -515,6 +471,17 @@ public class MainActivity extends AppCompatActivity
         });
 
         mTextViewStatus = (TextView) findViewById(R.id.textViewStatus);
+
+        if (mCameraInfo.isNx1()) {
+            // TODO: get custom key mapping using prefman
+            ((TextView) findViewById(R.id.keyLeft)).setText(R.string.left);
+            ((TextView) findViewById(R.id.keyRight)).setText(R.string.right);
+            ((TextView) findViewById(R.id.keyDown)).setText(R.string.down);
+        } else { // NX500, NX300
+            ((TextView) findViewById(R.id.keyLeft)).setText(R.string.left_drive);
+            ((TextView) findViewById(R.id.keyRight)).setText(R.string.right_af);
+            ((TextView) findViewById(R.id.keyDown)).setText(R.string.down_iso);
+        }
     }
 
     @Override
@@ -855,6 +822,9 @@ public class MainActivity extends AppCompatActivity
             case KEY_MODE_CUSTOM1_GET:
                 mode = "C1";
                 break;
+            case KEY_MODE_CUSTOM2_GET:
+                mode = "C2";
+                break;
             case KEY_MODE_M_GET:
                 mode = "M";
                 break;
@@ -1037,6 +1007,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private class ModeWheelAdapter implements WheelAdapter {
+
         private class Mode {
             public String mMode;
             public TextDrawable mDrawable;
@@ -1058,18 +1029,46 @@ public class MainActivity extends AppCompatActivity
         }
 
         private Resources res = getResources();
-        Mode[] mModes = {
-                new Mode("C1", KEY_MODE_CUSTOM1),
-                new Mode("M", KEY_MODE_M),
-                new Mode("S", KEY_MODE_S),
-                new Mode("A", KEY_MODE_A),
-                new Mode("P", KEY_MODE_P),
-                new Mode("AUTO", KEY_MODE_SMART),
-                new Mode("SCN", KEY_MODE_SCENE),
-                new Mode("SAS", KEY_MODE_SAS),
-                new Mode("C2", KEY_MODE_CUSTOM2),
-        };
+        Mode[] mModes;
+
         private int mSelectedPosition;
+
+        public ModeWheelAdapter() {
+            if (mCameraInfo.isNx1()) {
+                mModes = new Mode[] {
+                    new Mode("C1", KEY_MODE_CUSTOM1),
+                    new Mode("M", KEY_MODE_M),
+                    new Mode("S", KEY_MODE_S),
+                    new Mode("A", KEY_MODE_A),
+                    new Mode("P", KEY_MODE_P),
+                    new Mode("AUTO", KEY_MODE_SMART),
+                    new Mode("SCN", KEY_MODE_SCENE),
+                    new Mode("C2", KEY_MODE_CUSTOM2),
+                };
+            } else if (mCameraInfo.isNx500()) {
+                mModes = new Mode[] {
+                    new Mode("C1", KEY_MODE_CUSTOM1),
+                    new Mode("M", KEY_MODE_M),
+                    new Mode("S", KEY_MODE_S),
+                    new Mode("A", KEY_MODE_A),
+                    new Mode("P", KEY_MODE_P),
+                    new Mode("AUTO", KEY_MODE_SMART),
+                    new Mode("SCN", KEY_MODE_SCENE),
+                    new Mode("SAS", KEY_MODE_SAS),
+                    new Mode("C2", KEY_MODE_CUSTOM2),
+                };
+            } else { // NX300
+                mModes = new Mode[]{
+                    new Mode("M", KEY_MODE_M),
+                    new Mode("S", KEY_MODE_S),
+                    new Mode("A", KEY_MODE_A),
+                    new Mode("P", KEY_MODE_P),
+                    new Mode("AUTO", KEY_MODE_SMART),
+                    new Mode("SCN", KEY_MODE_SCENE),
+                };
+            }
+            mWheelViewMode.setWheelItemCount(mModes.length);
+        }
 
         @Override
         public Drawable getDrawable(int position) {

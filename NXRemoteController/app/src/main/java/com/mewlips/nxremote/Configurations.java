@@ -35,6 +35,8 @@ public class Configurations {
             = "@/opt/usr/nx-on-wake/EV_EV.sh";
     public static final String POPUP_TIMEOUT_SH_COMMAND
             = "@" + APP_PATH + "/popup_timeout.sh";
+    public static final String GET_MOV_SIZE_COMMAND_NX1
+            = "$prefman get 0 0x00000330 l";
     public static final String GET_MOV_SIZE_COMMAND_NX500
             = "$prefman get 0 0x0000a360 l";
     public static final String LCD_ON_COMMAND = "lcd=on";

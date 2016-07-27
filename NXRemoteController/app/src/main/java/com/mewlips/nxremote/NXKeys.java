@@ -52,6 +52,7 @@ public class NXKeys {
     public static final String KEY_MODE_M = "XF86Battery";
     public static final String KEY_MODE_CUSTOM1_GET = "KP_Home";
     public static final String KEY_MODE_CUSTOM1 = "XF86WLAN";
+    public static final String KEY_MODE_CUSTOM2_GET = "Scroll_Lock";
     public static final String KEY_MODE_CUSTOM2 = "XF86Bluetooth";
     public static final String KEY_MODE_SAS_GET = "F1";
     public static final String KEY_MODE_SAS = "XF86KbdBrightnessDown";

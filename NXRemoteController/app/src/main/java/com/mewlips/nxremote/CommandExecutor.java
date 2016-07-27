@@ -91,7 +91,8 @@ public class CommandExecutor extends Thread {
                                 commandOutput += new String(readBuf, 0, readSize);
                             }
                         } else {
-                            if (command.equals(GET_MOV_SIZE_COMMAND_NX500)) {
+                            if (command.equals(GET_MOV_SIZE_COMMAND_NX1) ||
+                                    command.equals(GET_MOV_SIZE_COMMAND_NX500)) {
                                 Log.d(TAG, "commandOutput = " + commandOutput);
                                 if (commandOutput.startsWith("[app] in memory:") &&
                                         commandOutput.length() > 30) {

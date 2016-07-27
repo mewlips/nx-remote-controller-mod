@@ -165,7 +165,7 @@
             <TextView
                 android:id="@+id/keyUp"
                 style="@style/keypadButton"
-                android:text="UP (DISP)" />
+                android:text="@string/up_disp" />
             <TextView
                 android:id="@+id/keyFn"
                 style="@style/keypadButton"
@@ -173,7 +173,7 @@
             <TextView
                 android:id="@+id/keyLeft"
                 style="@style/keypadButton"
-                android:text="Left (Drive)" />
+                android:text="@string/left" />
             <TextView
                 android:id="@+id/keyOK"
                 style="@style/keypadButton"
@@ -181,7 +181,7 @@
             <TextView
                 android:id="@+id/keyRight"
                 style="@style/keypadButton"
-                android:text="Right (AF)" />
+                android:text="@string/right" />
             <TextView
                 android:id="@+id/keyPB"
                 style="@style/keypadButton"
@@ -189,7 +189,7 @@
             <TextView
                 android:id="@+id/keyDown"
                 style="@style/keypadButton"
-                android:text="Down (ISO)" />
+                android:text="@string/down" />
             <TextView
                 android:id="@+id/keyDel"
                 style="@style/keypadButton"
