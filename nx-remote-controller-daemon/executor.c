@@ -50,7 +50,7 @@ void *start_executor(Sockets *data)
              get_chroot_command(), NX_INPUT_INJECTOR_COMMAND);
     inject_input_pipe = popen(command_line, "w");
     if (inject_input_pipe == NULL) {
-        print_error("pope() failed");
+        print_error("popen() failed");
         goto error;
     }
 

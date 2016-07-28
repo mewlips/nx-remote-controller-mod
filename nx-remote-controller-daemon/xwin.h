@@ -3,7 +3,7 @@
 
 #include "network.h"
 
-extern void init_xwin(int di_camera_app_id);
+extern void init_xwin(void);
 extern void set_xwin_fps(int fps);
 extern void *start_xwin_capture(Sockets *sockets);
 extern void stop_xwin_capture(void);

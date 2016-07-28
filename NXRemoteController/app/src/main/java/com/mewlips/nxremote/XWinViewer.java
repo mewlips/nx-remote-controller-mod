@@ -1,7 +1,9 @@
 package com.mewlips.nxremote;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.util.Log;
 
 import java.io.IOException;
@@ -93,6 +95,27 @@ public class XWinViewer extends Thread {
                             Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
                             mActivity.setXWinBitmap(rotatedBitmap);
 
+                        } else if (mCameraInfo.isNx1()) {
+                            int x = (mBuffer[2] & 0xff) << 24 | (mBuffer[3] & 0xff)  << 16 |
+                                    (mBuffer[4] & 0xff) <<  8 | (mBuffer[5] & 0xff);
+                            int y = (mBuffer[6] & 0xff) << 24 | (mBuffer[7] & 0xff)  << 16 |
+                                    (mBuffer[8] & 0xff) <<  8 | (mBuffer[9] & 0xff);
+                            int w = (mBuffer[10] & 0xff) << 24 | (mBuffer[11] & 0xff)  << 16 |
+                                    (mBuffer[12] & 0xff) <<  8 | (mBuffer[13] & 0xff);
+                            int h = (mBuffer[14] & 0xff) << 24 | (mBuffer[15] & 0xff)  << 16 |
+                                    (mBuffer[16] & 0xff) <<  8 | (mBuffer[17] & 0xff);
+                            Log.d(TAG, "x = " + x + ", y = " + y + ",w = " + w + ",h = " + h);
+                            if (w != FRAME_WIDTH || h != FRAME_HEIGHT) {
+                                bitmap = Bitmap.createBitmap(
+                                        FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+                                Canvas canvas = new Canvas(bitmap);
+                                Bitmap overlay = Bitmap.createBitmap(mIntArray, w, h, Bitmap.Config.ARGB_8888);
+                                Paint paint = new Paint(Paint.FILTER_BITMAP_FLAG);
+                                canvas.drawBitmap(overlay, x, y, paint);
+                            } else {
+                                bitmap = Bitmap.createBitmap(mIntArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
+                            }
+                            mActivity.setXWinBitmap(bitmap);
                         } else {
                             bitmap = Bitmap.createBitmap(mIntArray, FRAME_WIDTH, FRAME_HEIGHT, Bitmap.Config.ARGB_8888);
                             mActivity.setXWinBitmap(bitmap);

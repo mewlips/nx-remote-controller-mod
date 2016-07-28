@@ -5,6 +5,7 @@
 
 extern void init_video(void);
 extern void set_video_fps(int fps);
+extern void set_video_evf(bool on);
 extern void *start_video_capture(Sockets *sockets);
 extern void stop_video_capture(void);
 

@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -15,6 +16,7 @@
 #define DEV_MEM_PATH "/dev/mem"
 
 static int s_video_fps;
+static bool s_video_evf;
 static bool s_stopped;
 
 static void *mmap_lcd(const int fd, const off_t offset)
@@ -48,6 +50,11 @@ void set_video_fps(int fps)
 {
     s_video_fps = fps;
     print_log("video fps = %d", s_video_fps);
+}
+
+void set_video_evf(bool on)
+{
+    s_video_evf = on;
 }
 
 void *start_video_capture(Sockets *sockets)
@@ -92,6 +99,12 @@ void *start_video_capture(Sockets *sockets)
     s_stopped = false;
     while (!s_stopped) {
         start_time = get_current_time();
+
+        if (s_video_evf) {
+            // NX1 EVF is not supported.
+            usleep(100*1000);
+            continue;
+        }
 
         for (i = 0; i < num_video_addrs; i++) {
             const char *p = addrs[i];

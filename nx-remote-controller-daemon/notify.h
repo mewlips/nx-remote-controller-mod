@@ -6,6 +6,8 @@
 extern void notify_video_socket_closed(void);
 extern void notify_xwin_socket_closed(void);
 extern void notify_executor_socket_closed(void);
+extern void notify_evf_start(void);
+extern void notify_evf_end(void);
 extern void *start_notify(Sockets *sockets);
 
 #endif

@@ -83,6 +83,10 @@ public class NotifyReceiver extends Thread {
                     } else if (type.startsWith("executor")) {
                         mActivity.startExecutor();
                     }
+                } else if (line.startsWith("evf=on")) {
+                    mActivity.setEvf(true);
+                } else if (line.startsWith("evf=off")) {
+                    mActivity.setEvf(false);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

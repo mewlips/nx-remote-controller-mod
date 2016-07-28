@@ -2,9 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
+#include "command.h"
+#include "notify.h"
 #include "nx_model.h"
 #include "util.h"
+#include "video.h"
 #include "xwin.h"
 
 #define XWIN_SEGMENT_PIXELS 320
@@ -14,14 +18,52 @@
 
 static int s_xwin_fps;
 static bool s_stopped;
-static int s_di_camera_app_id;
 
-void init_xwin(int di_camera_app_id)
+static bool get_active_window_info(
+    int *window_id, int *x, int *y, int *w, int *h)
 {
-    s_di_camera_app_id = di_camera_app_id;
-    if (s_di_camera_app_id != 0) {
-        print_log("di-camera-app window-id : %d", di_camera_app_id);
+    char command_line[256];
+    FILE *command_pipe;
+    char line[256];
+    int line_num;
+
+    snprintf(command_line, sizeof(command_line),
+             "%s xdotool getactivewindow getwindowgeometry",
+             get_chroot_command());
+
+    command_pipe = popen(command_line, "r");
+    if (command_pipe == NULL) {
+        print_error("popen() failed");
+        return false;
     }
+
+    line_num = 1;
+    while (fgets(line, sizeof(line), command_pipe) != NULL) {
+        if (line_num == 1) {
+            if (sscanf(line, "Window %d", window_id) != 1) {
+                return false;
+            }
+        } else if (line_num == 2) {
+            if (sscanf(line, "  Position: %d,%d", x, y) != 2) {
+                return false;
+            }
+        } else if (line_num == 3) {
+            if (sscanf(line, "  Geometry: %dx%d", w, h) != 2) {
+                return false;
+            }
+        }
+        line_num++;
+    }
+
+    pclose(command_pipe);
+
+    //print_log("window_id = %d, %dx%d+%d,%d", *window_id, *w, *h, *x, *y);
+
+    return true;
+}
+
+void init_xwin(void)
+{
     set_xwin_fps(get_default_xwin_fps());
 }
 
@@ -48,18 +90,16 @@ void *start_xwin_capture(Sockets *sockets)
     ssize_t write_size;
     int *hashs;
     int hash, hash_index;
-    const int xwin_frame_size = get_xwin_frame_size();
+    int xwin_frame_size = get_xwin_frame_size();
     bool err = false;
     char xwd_command[64];
+    int window_id, x, y, w, h;
+    int xwin_num_segments = XWIN_NUM_SEGMENTS;
+    bool evf_on = false;;
 
     free(sockets);
 
-    if (s_di_camera_app_id != 0) {
-        snprintf(xwd_command, sizeof(xwd_command),
-                 "xwd -id %d", s_di_camera_app_id);
-    } else {
-        snprintf(xwd_command, sizeof(xwd_command), "xwd -root");
-    }
+    snprintf(xwd_command, sizeof(xwd_command), "xwd -root");
 
     hashs = (int *)calloc(XWIN_NUM_SEGMENTS, sizeof(int *));
 
@@ -72,6 +112,33 @@ void *start_xwin_capture(Sockets *sockets)
         start_time = get_current_time();
         hash = 0;
         err = false;
+
+        if (is_nx1()) {
+            bool ret = get_active_window_info(&window_id, &x, &y, &w, &h);
+            if (ret == false) {
+                usleep(100*1000);
+                continue;
+            }
+            if (w == 1024 && h == 768) {
+                if (evf_on == false) {
+                    evf_on = true;
+                    print_log("evf on!");
+                    set_video_evf(true);
+                    notify_evf_start();
+                }
+                usleep(100*1000);
+                continue;
+            } else {
+                evf_on = false;
+                notify_evf_end();
+                set_video_evf(false);
+            }
+
+            snprintf(xwd_command, sizeof(xwd_command),
+                     "xwd -id %d", window_id);
+            xwin_frame_size = w * h * 4;
+            xwin_num_segments = w * h / XWIN_SEGMENT_PIXELS;
+        }
 
         xwd_out = popen(xwd_command, "r");
         if (xwd_out == NULL) {
@@ -108,8 +175,9 @@ void *start_xwin_capture(Sockets *sockets)
                     print_log("read_size == 0");
                     err = true;
                     break;
-                } else if (read_size != XWIN_BUF_SIZE - 2) {
-                    print_log("read_size != %d (XWIN_BUF_SIZE)", XWIN_BUF_SIZE);
+                } else if (offset != xwin_frame_size &&
+                           read_size != XWIN_BUF_SIZE - 2) {
+                    print_log("read_size != %d (XWIN_BUF_SIZE)", XWIN_BUF_SIZE - 2);
                     err = true;
                     break;
                 } else {
@@ -139,6 +207,16 @@ void *start_xwin_capture(Sockets *sockets)
                         // notify end of frame
                         buf[0] = 0x0f;
                         buf[1] = 0xff;
+                        if (is_nx1()) {
+                            uint32_t *p = (uint32_t *)(&buf[2]);
+                            *p = htonl(x);
+                            p = (uint32_t *)(&buf[6]);
+                            *p = htonl(y);
+                            p = (uint32_t *)(&buf[10]);
+                            *p = htonl(w);
+                            p = (uint32_t *)(&buf[14]);
+                            *p = htonl(h);
+                        }
                         write_size = write(client_socket, buf, XWIN_BUF_SIZE);
                         if (write_size != XWIN_BUF_SIZE) {
                             print_log("write() failed");
@@ -146,7 +224,7 @@ void *start_xwin_capture(Sockets *sockets)
                             break;
                         }
 
-                        if (skip_count != XWIN_NUM_SEGMENTS - 1) {
+                        if (skip_count != xwin_num_segments - 1) {
                             print_log("[XWinCapture] count = %d, skip_count = %d",
                                 count, skip_count);
                         }

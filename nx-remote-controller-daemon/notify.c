@@ -20,6 +20,8 @@
 static bool s_video_socket_closed_notify;
 static bool s_xwin_socket_closed_notify;
 static bool s_executor_socket_closed_notify;
+static bool s_evf_start_notify;
+static bool s_evf_end_notify;
 
 void notify_video_socket_closed(void)
 {
@@ -34,6 +36,16 @@ void notify_xwin_socket_closed(void)
 void notify_executor_socket_closed(void)
 {
     s_executor_socket_closed_notify = true;
+}
+
+void notify_evf_start(void)
+{
+    s_evf_start_notify = true;
+}
+
+void notify_evf_end(void)
+{
+    s_evf_end_notify = true;
 }
 
 void *start_notify(Sockets *sockets)
@@ -166,6 +178,27 @@ void *start_notify(Sockets *sockets)
             }
             s_executor_socket_closed_notify = false;
         }
+
+        if (s_evf_start_notify) {
+            char msg[] = "evf=on\n";
+            write_size = write(client_socket, msg, strlen(msg));
+            if (write_size == -1) {
+                print_log("write() failed!");
+                break;
+            }
+            s_evf_start_notify = false;
+        }
+
+        if (s_evf_end_notify) {
+            char msg[] = "evf=off\n";
+            write_size = write(client_socket, msg, strlen(msg));
+            if (write_size == -1) {
+                print_log("write() failed!");
+                break;
+            }
+            s_evf_end_notify = false;
+        }
+
 
         // send ping
         if (count % 10 == 0) {

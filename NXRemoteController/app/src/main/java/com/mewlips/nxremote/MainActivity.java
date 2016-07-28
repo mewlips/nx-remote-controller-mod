@@ -959,6 +959,23 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    public void setEvf(final boolean on) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (on) {
+                    mTextViewStatus.setText("EVF");
+                    setXWinVisibility(false);
+                    setVideoVisibility(false);
+                } else {
+                    mTextViewStatus.setText("");
+                    setXWinVisibility(true);
+                    setVideoVisibility(true);
+                }
+            }
+        });
+    }
+
     private class TextDrawable extends Drawable {
         private static final int DEFAULT_COLOR = Color.WHITE;
         private static final int DEFAULT_TEXTSIZE = 14;
