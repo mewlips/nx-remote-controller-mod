@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>NX Remote Controller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style type="text/css">
+    .video {
+    }
+    .overlay {
+        position:absolute;
+    }
+    .tg  {border-collapse:collapse;border-spacing:0;border-color:#aabcfe;border:none;}
+    .tg td{font-family:Arial, sans-serif;font-size:20px;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#aabcfe;color:#669;background-color:#e8edff;}
+    .tg th{font-family:Arial, sans-serif;font-size:20px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#aabcfe;color:#039;background-color:#b9c9fe;width:70px;}
+    .tg .tg-yw4l{vertical-align:top}
+
+    .tg2  {border-collapse:collapse;border-spacing:0;border-color:#999;}
+    .tg2 td{font-family:Arial, sans-serif;font-size:20px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA;}
+    .tg2 th{font-family:Arial, sans-serif;font-size:20px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#fff;background-color:#26ADE4;width:80px;}
+    .tg2 .tg-yw4l{vertical-align:top}
+    .tg3  {border-collapse:collapse;border-spacing:0;}
+    .tg3 td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;}
+    .tg3 th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;width:80px;}
+    .tg3 .tg-bzci{font-size:20px;text-align:center;vertical-align:top}
+</style>
+
+<script type="text/javascript" src="jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="liveview.js"></script>
+<script type="text/javascript" src="input.js"></script>
+<script language="javascript" type="text/javascript">
+    function getCameraVersion() {
+      $.ajax({
+          url: '/api/v1/camera/version',
+          success: function(json) {
+              $('#version').html(json);
+          }
+      });
+    }
+      function getOsd() {
+        var osd = document.getElementById("osd");
+        osd.src = '/api/v1/osd/get?' + new Date().getTime();
+    }
+
+    function startStreaming() {
+        getCameraVersion();
+        getLiveview();
+        setInterval(getOsd, 200);
+    }
+
+</script>
+</head>
+<body onload="startStreaming();">
+    <p id="version"></p>
+    <p id="debug"></p>
+    <div>
+        <img class="overlay" id="osd" width="720" height="480" />
+        <canvas class="video" id="liveview" width="720" height="480"></canvas>
+    </div>
+
+    <table class="tg">
+        <tr>
+            <th class="tg-yw4l" onclick="onKey('MODE_P');">P</th>
+            <th class="tg-yw4l" onclick="onKey('MODE_A');">A</th>
+            <th class="tg-yw4l" onclick="onKey('MODE_S');">S</th>
+            <th class="tg-yw4l" onclick="onKey('MODE_M');">M</th>
+            <th class="tg-yw4l" onclick="onKey('MODE_CUSTOM1');">C1</th>
+            <th class="tg-yw4l" onclick="onKey('MODE_CUSTOM2');">C2</th>
+            <th class="tg-yw4l" onclick="onKey('MODE_SCENE');">SCENE<br></th>
+            <th class="tg-yw4l" onclick="onKey('MODE_SMART');">AUTO<br></th>
+        </tr>
+    </table>
+    <table class="tg2">
+        <tr>
+            <th class="tg-yw4l" onclick="onKey('DRIVE_BRACKET');">BRACKET<br></th>
+            <th class="tg-yw4l" onclick="onKey('DRIVE_TIMER');">TIMER</th>
+            <th class="tg-yw4l" onclick="onKey('DRIVE_CONTI_H');">CONTI_H<br></th>
+            <th class="tg-yw4l" onclick="onKey('DRIVE_CONTI_N');">CONTI_N<br></th>
+            <th class="tg-yw4l" onclick="onKey('DRIVE_SINGLE');">SINGLE<br></th>
+        </tr>
+    </table>
+    <table class="tg3">
+        <tr>
+            <th class="tg-bzci" onclick="onKey('MENU');">MENU</th>
+            <th class="tg-bzci" onclick="onKey('UP');">UP</th>
+            <th class="tg-bzci" onclick="onKey('FN');">FN</th>
+        </tr>
+        <tr>
+            <td class="tg-bzci" onclick="onKey('LEFT');">LEFT</td>
+            <td class="tg-bzci" onclick="onKey('OK');">OK<br></td>
+            <td class="tg-bzci" onclick="onKey('RIGHT');">RIGHT<br></td>
+        </tr>
+        <tr>
+            <td class="tg-bzci" onclick="onKey('PB');">PB</td>
+            <td class="tg-bzci" onclick="onKey('DOWN');">DOWN</td>
+            <td class="tg-bzci" onclick="onKey('DEL');">DEL</td>
+        </tr>
+    </table>
+    <table class="tg3">
+        <tr>
+            <td class="tg-bzci" onclick="onKey('AF_MODE');">AF_MODE</td>
+            <td class="tg-bzci" onclick="onKey('ISO');">ISO<br></td>
+            <td class="tg-bzci" onclick="onKey('WB');">WB<br></td>
+            <td class="tg-bzci" onclick="onKey('METER');">METRING<br></td>
+        </tr>
+    </table>
+    <table class="tg3">
+        <tr>
+            <th class="tg-bzci" onclick="onKey('AEL');">AEL</th>
+            <th class="tg-bzci" onclick="onKey('EV');">EV</th>
+            <th class="tg-bzci" onclick="onKey('WIFI');">WIFI</th>
+        </tr>
+    </table>
+    <table class="tg3">
+        <tr>
+            <td class="tg-bzci" onclick="onKey('AF_ON');">AF_ON</td>
+            <td class="tg-bzci" onclick="onKey('LIGHT');">LIGHT</td>
+            <td class="tg-bzci" onclick="onKey('MF_ZOOM');">MF_ZOOM</td>
+        </tr>
+    </table>
+    <table class="tg3">
+        <tr>
+            <td class="tg-bzci" onclick="onKeyDown('S1');">S1 down</td>
+            <td class="tg-bzci" onclick="onKey('S2');">S2</td>
+            <td class="tg-bzci" onclick="onKeyUp('S1');">S1 up</td>
+            <td class="tg-bzci" onclick="onKey('REC');">REC</td>
+        </tr>
+    </table>
+
+</body>
+</html>

@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
+#include "api_server.h"
 #include "executor.h"
 #include "network.h"
 #include "notify.h"
@@ -17,12 +18,17 @@ int main(int argc, char **argv)
     init_nx_model();
     init_video();
     init_xwin();
+    init_executor();
 
     listen_socket(PORT_NOTIFY, start_notify);
     listen_socket(PORT_VIDEO, start_video_capture);
     listen_socket(PORT_XWIN, start_xwin_capture);
     listen_socket(PORT_EXECUTOR, start_executor);
     broadcast_discovery_packet(PORT_UDP_BROADCAST);
+
+    run_api_server();
+
+    destroy_executor();
 
     return 0;
 }

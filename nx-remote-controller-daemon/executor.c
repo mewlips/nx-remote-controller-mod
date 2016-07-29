@@ -17,6 +17,29 @@
 #define LCD_CONTROL_SH_COMMAND "lcd_control.sh"
 #define NX_INPUT_INJECTOR_COMMAND "nx-input-injector"
 
+static FILE *s_inject_input_pipe = NULL;
+
+void init_executor(void)
+{
+    char command_line[256];
+
+    snprintf(command_line, sizeof(command_line), "%s %s",
+             get_chroot_command(), NX_INPUT_INJECTOR_COMMAND);
+    s_inject_input_pipe = popen(command_line, "w");
+    if (s_inject_input_pipe == NULL) {
+        print_error("popen() failed");
+    }
+}
+
+void destroy_executor(void)
+{
+    if (s_inject_input_pipe != NULL) {
+        if (pclose(s_inject_input_pipe) == -1) {
+            //print_error("pclose() failed!");
+        }
+    }
+}
+
 void *start_executor(Sockets *data)
 {
     FILE *client_sock;
@@ -28,7 +51,6 @@ void *start_executor(Sockets *data)
     size_t read_size;
     size_t write_size;
     unsigned long size;
-    FILE *inject_input_pipe = NULL;
     long long last_ping_time;
     int flags;
 
@@ -45,14 +67,6 @@ void *start_executor(Sockets *data)
     }
 
     print_log("executor started.");
-
-    snprintf(command_line, sizeof(command_line), "%s %s",
-             get_chroot_command(), NX_INPUT_INJECTOR_COMMAND);
-    inject_input_pipe = popen(command_line, "w");
-    if (inject_input_pipe == NULL) {
-        print_error("popen() failed");
-        goto error;
-    }
 
     flags = fcntl(client_socket, F_GETFL, 0);
     flags |= O_NONBLOCK;
@@ -111,8 +125,10 @@ void *start_executor(Sockets *data)
                 }
             }
         } else if (strncmp("inject_input=", command_line, 13) == 0) {
-            fprintf(inject_input_pipe, "%s\n", command_line + 13);
-            fflush(inject_input_pipe);
+            if (s_inject_input_pipe != NULL) {
+                fprintf(s_inject_input_pipe, "%s\n", command_line + 13);
+                fflush(s_inject_input_pipe);
+            }
         } else if (strncmp("vfps=", command_line, 5) == 0) {
             set_video_fps(atoi(command_line + 5));
         } else if (strncmp("xfps=", command_line, 5) == 0) {
@@ -153,13 +169,17 @@ error:
             //print_error("pclose() failed!");
         }
     }
-    if (inject_input_pipe != NULL) {
-        if (pclose(inject_input_pipe) == -1) {
-            //print_error("pclose() failed!");
-        }
-    }
 
     print_log("executor finished.");
     return NULL;
 }
 
+void inject_input(const char *command)
+{
+    print_log("s_inject_input_pipe = %p", s_inject_input_pipe);
+    if (s_inject_input_pipe != NULL) {
+        print_log("command = %s", command);
+        fprintf(s_inject_input_pipe, "%s\n", command);
+        fflush(s_inject_input_pipe);
+    }
+}

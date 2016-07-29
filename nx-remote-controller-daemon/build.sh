@@ -17,5 +17,9 @@ arm-none-linux-gnueabi-gcc \
         util.c \
         video.c \
         xwin.c \
+        mongoose.c \
+        api_server.c \
+        liveview.c \
+        osd.c \
     && cp -fv nx-remote-controller-daemon ../install/app/ \
     && cp -fv nx-remote-controller-daemon ../sd_install/remote/

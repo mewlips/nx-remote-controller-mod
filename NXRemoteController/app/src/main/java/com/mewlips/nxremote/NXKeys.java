@@ -23,7 +23,7 @@ public class NXKeys {
     public static final String KEY_FN = "XF86HomePage";
     public static final String KEY_EV = "XF86Reload";
     public static final String KEY_PB = "XF86Tools";
-    public static final String KEY_AF_MODE = "Xf86TaskPane";
+    public static final String KEY_AF_MODE = "XF86TaskPane";
     public static final String KEY_WB = "XF86Launch6";
     public static final String KEY_ISO = "XF86Launch7";
     public static final String KEY_AF_ON = "XF86Launch9";

@@ -11,6 +11,7 @@ static char s_chroot_command[256];
 
 void run_command(char *command_line)
 {
+    print_log("command_line = %s", command_line);
     pid_t pid = fork();
     if (pid == 0) { // child
         print_log("execvp(), %s", command_line);

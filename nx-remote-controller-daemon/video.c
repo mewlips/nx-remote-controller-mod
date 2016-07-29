@@ -19,7 +19,7 @@ static int s_video_fps;
 static bool s_video_evf;
 static bool s_stopped;
 
-static void *mmap_lcd(const int fd, const off_t offset)
+void *mmap_lcd(const int fd, const off_t offset)
 {
     off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
     //print_log("offset = %llu, pa_offset = %llu", (unsigned long long)offset, (unsigned long long)pa_offset);
@@ -32,7 +32,7 @@ static void *mmap_lcd(const int fd, const off_t offset)
     return p + (offset - pa_offset);
 }
 
-static void munmap_lcd(void *addr, const off_t offset)
+void munmap_lcd(void *addr, const off_t offset)
 {
     off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
     const size_t length = get_mmap_video_size();

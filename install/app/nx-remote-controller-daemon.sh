@@ -10,9 +10,9 @@ killall nx-remote-controller-daemon
 
 $APP_PATH/lcd_control.sh on
 if [ "$1" == "debug" ]; then
-    $APP_PATH/nx-remote-controller-daemon
+    nice --adjustment=19 $APP_PATH/nx-remote-controller-daemon
 else
-    $APP_PATH/nx-remote-controller-daemon &> /dev/null &
+    nice --adjustment=19 $APP_PATH/nx-remote-controller-daemon &> /dev/null &
 fi
 
 $POPUP_TIMEOUT " [ nx-remote-controller-mod ] " 2 &

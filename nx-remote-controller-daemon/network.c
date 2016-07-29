@@ -140,8 +140,9 @@ void listen_socket(const int port, const OnConnect on_connect)
     }
 }
 
-void broadcast_discovery_packet(const int port)
+static void *broadcast_discovery_packet_func(void *data)
 {
+    int port = (int)data;
     int sock;
     int broadcast_enable = 1;
     int ret;
@@ -196,4 +197,22 @@ void broadcast_discovery_packet(const int port)
     if (close(sock) == -1) {
         print_error("close() failed");
     }
+
+    return NULL;
 }
+
+void broadcast_discovery_packet(int port)
+{
+    pthread_t thread;
+
+    if (pthread_create(&thread, NULL, broadcast_discovery_packet_func,
+                       (void *)port)) {
+        die("pthread_create() failed!");
+    }
+
+    if (pthread_detach(thread)) {
+        die("pthread_detach() failed");
+    }
+}
+
+

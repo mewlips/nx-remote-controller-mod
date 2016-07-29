@@ -1,8 +1,12 @@
+#include <arpa/inet.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
 #include "command.h"
 #include "notify.h"

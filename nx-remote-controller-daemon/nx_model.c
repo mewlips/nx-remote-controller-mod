@@ -153,6 +153,7 @@ static off_t s_addrs_nx500[] = {
 static off_t s_addrs_nx1[] = {
     0xfb1be000,
     0xfb2de000,
+    0xfb3fe000,
     0xfb51e000,
     0xfb63e000,
     0xfb75e000,
