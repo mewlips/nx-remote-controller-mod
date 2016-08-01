@@ -44,8 +44,12 @@
 
     function startStreaming() {
         getCameraVersion();
-        getLiveview();
+        //getLiveview();
+        setInterval(getLiveview, 200);
         setInterval(getOsd, 200);
+    }
+    function debug(str) {
+        $('#debug').html(str);
     }
 
 </script>

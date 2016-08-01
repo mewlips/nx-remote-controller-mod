@@ -11,6 +11,7 @@ function convertYUVtoRGB(y, u, v) {
 
     return {r:r, g:g, b:b};
 }
+
 function nv12toRgba(nv12, rgba, width, height) {
     var size = width * height;
     var offset = size;
@@ -57,6 +58,46 @@ function nv12toRgba(nv12, rgba, width, height) {
     }
 }
 
+function nv12toRgba2(nv12, rgba, width, height) {
+    var size = (width / 2) * (height / 2);
+    var offset = size;
+    var y, u, v;
+
+    for (var i = 0, j = 0, k = 0; i < size; i++, k += 2) {
+        y = nv12[i] & 0xff;
+        u = (nv12[offset + k] & 0xff) - 128;
+        v = (nv12[offset + k + 1] & 0xff) - 128;
+
+        var rgb = convertYUVtoRGB(y, u, v);
+        rgba[j+0] = rgb.r;
+        rgba[j+1] = rgb.g;
+        rgba[j+2] = rgb.b;
+        rgba[j+3] = 255;
+
+
+        rgba[j+4] = rgb.r;
+        rgba[j+5] = rgb.g;
+        rgba[j+6] = rgb.b;
+        rgba[j+7] = 255;
+
+        rgba[j+0+width*4] = rgb.r;
+        rgba[j+1+width*4] = rgb.g;
+        rgba[j+2+width*4] = rgb.b;
+        rgba[j+3+width*4] = 255;
+
+        rgba[j+4+width*4] = rgb.r;
+        rgba[j+5+width*4] = rgb.g;
+        rgba[j+6+width*4] = rgb.b;
+        rgba[j+7+width*4] = 255;
+
+        j+=8;
+
+        if (i != 0 && (i+1) % (width / 2) == 0) {
+            j += width * 4;
+        }
+    }
+}
+
 function getLiveview() {
     var cvs = document.getElementById("liveview");
     var ctx = cvs.getContext("2d");
@@ -72,10 +113,14 @@ function getLiveview() {
 
             if (nv12.length == 720 * 480 * 3 / 2) {
                 nv12toRgba(nv12, buffer, 720, 480);
+            } else if (nv12.length == 720 *480 / 4 * 3) {
+                nv12toRgba2(nv12, buffer, 720, 480);
             }
+            //debug("nv12.length = " + nv12.length);
+            ctx.scale(2,2);
             ctx.putImageData(imageData, 0, 0);
 
-            getLiveview();
+            //getLiveview();
         }
     });
 }
