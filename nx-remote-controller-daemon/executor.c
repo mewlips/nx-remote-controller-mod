@@ -176,7 +176,7 @@ error:
 
 void inject_input(const char *command)
 {
-    print_log("s_inject_input_pipe = %p", s_inject_input_pipe);
+    //print_log("s_inject_input_pipe = %p", s_inject_input_pipe);
     if (s_inject_input_pipe != NULL) {
         print_log("command = %s", command);
         fprintf(s_inject_input_pipe, "%s\n", command);

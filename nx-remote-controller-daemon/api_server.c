@@ -70,6 +70,10 @@ static void handle_input_api(struct mg_connection *nc,
         if (p != NULL) {
             *p = ' ';
         }
+        p = strstr(command, "-");
+        if (p != NULL) {
+            *p = ' ';
+        }
         print_log("command = %s", command);
         inject_input(command);
 

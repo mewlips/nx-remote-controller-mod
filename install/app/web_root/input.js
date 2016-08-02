@@ -141,3 +141,27 @@ function oKeyUp(key) {
         }
     });
 }
+
+function onMouseDown(x, y) {
+    $.ajax({
+        url: '/api/v1/input/inject?mousedown=1',
+        success: function(data) {
+        }
+    });
+}
+
+function onMouseMove(x, y) {
+    $.ajax({
+        url: '/api/v1/input/inject?mousemove=' + x + '-' + y,
+        success: function(data) {
+        }
+    });
+}
+
+function onMouseUp(x, y) {
+    $.ajax({
+        url: '/api/v1/input/inject?mouseup=1',
+        success: function(data) {
+        }
+    });
+}

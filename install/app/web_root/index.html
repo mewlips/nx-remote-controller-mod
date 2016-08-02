@@ -42,14 +42,68 @@
         osd.src = '/api/v1/osd/get?' + new Date().getTime();
     }
 
+    function debug(str) {
+        $('#debug').html(str);
+    }
+
     function startStreaming() {
         getCameraVersion();
         //getLiveview();
         setInterval(getLiveview, 200);
         setInterval(getOsd, 200);
+
+        onOsdMouseDown();
+        onOsdMouseMove();
+        onOsdMouseUp();
+        onWheel();
     }
-    function debug(str) {
-        $('#debug').html(str);
+
+    var mouseDowned = false;
+
+    function onOsdMouseDown() {
+        $('#osd').mousedown(function(e) {
+            e.preventDefault();
+            var parentOffset = $(this).parent().offset();
+            var x = e.pageX - parentOffset.left;
+            var y = e.pageY - parentOffset.top;
+            mouseDowned = true;
+            onMouseMove(x, y);
+            onMouseDown();
+        });
+    }
+
+    function onOsdMouseMove() {
+        $('#osd').mousemove(function(e) {
+            e.preventDefault();
+            if (mouseDowned == true) {
+                var parentOffset = $(this).parent().offset();
+                var x = e.pageX - parentOffset.left;
+                var y = e.pageY - parentOffset.top;
+                onMouseMove(x, y);
+            }
+        });
+    }
+
+    function onOsdMouseUp() {
+        $('#osd').mouseup(function(e) {
+            e.preventDefault();
+            var parentOffset = $(this).parent().offset();
+            var x = e.pageX - parentOffset.left;
+            var y = e.pageY - parentOffset.top;
+            onMouseUp();
+            mouseDowned = false;
+        });
+    }
+
+    function onWheel() {
+        $('#osd').bind('DOMMouseScroll mousewheel', function(e) {
+            if (e.originalEvent.wheelDelta > 0 || e.originalEvent.detail < 0) {
+                onKey('UP');
+            } else {
+                onKey('DOWN');
+            }
+            return false;
+        });
     }
 
 </script>
