@@ -18,7 +18,7 @@ typedef enum {
     NX_MODEL_NX3000  = 3000,
 } NxModel;
 
-extern void init_nx_model(void);
+extern void nx_model_init(void);
 extern NxModel get_nx_model(void);
 extern const char *get_nx_model_name(void);
 extern const char *get_nx_model_version(void);

@@ -10,7 +10,7 @@ static NxModel s_nx_model = NX_MODEL_UNKNOWN;
 static char s_nx_model_name[16];
 static char s_nx_model_version[16];
 
-void init_nx_model(void)
+void nx_model_init(void)
 {
     FILE *version_info;
 

@@ -66,18 +66,18 @@ static bool get_active_window_info(
     return true;
 }
 
-void init_xwin(void)
+void xwin_init(void)
 {
-    set_xwin_fps(get_default_xwin_fps());
+    xwin_set_fps(get_default_xwin_fps());
 }
 
-void set_xwin_fps(int fps)
+void xwin_set_fps(int fps)
 {
     s_xwin_fps = fps;
     print_log("xwin fps = %d", s_xwin_fps);
 }
 
-void *start_xwin_capture(Sockets *sockets)
+void *xwin_start_capture(Sockets *sockets)
 {
     int client_socket = sockets->client_socket;
 
@@ -127,7 +127,7 @@ void *start_xwin_capture(Sockets *sockets)
                 if (evf_on == false) {
                     evf_on = true;
                     print_log("evf on!");
-                    set_video_evf(true);
+                    video_set_evf(true);
                     notify_evf_start();
                 }
                 usleep(100*1000);
@@ -135,7 +135,7 @@ void *start_xwin_capture(Sockets *sockets)
             } else {
                 evf_on = false;
                 notify_evf_end();
-                set_video_evf(false);
+                video_set_evf(false);
             }
 
             snprintf(xwd_command, sizeof(xwd_command),
@@ -271,7 +271,7 @@ void *start_xwin_capture(Sockets *sockets)
     return NULL;
 }
 
-void stop_xwin_capture(void)
+void xwin_stop_capture(void)
 {
     s_stopped = true;
 }

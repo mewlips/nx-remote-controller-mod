@@ -62,7 +62,7 @@ static void *cap_osd_thread(void *data)
     return NULL;
 }
 
-void init_osd(void)
+void osd_init(void)
 {
     pthread_t thread;
 
@@ -76,12 +76,12 @@ void init_osd(void)
     }
 }
 
-void destroy_osd(void)
+void osd_destroy(void)
 {
     s_stopped = true;
 }
 
-void send_osd(struct mg_connection *nc, struct http_message *hm)
+void osd_send(struct mg_connection *nc, struct http_message *hm)
 {
     int index = !s_png_current_index;
     unsigned char *png_data = s_pngs[index];

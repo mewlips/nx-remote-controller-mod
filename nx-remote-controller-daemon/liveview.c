@@ -10,7 +10,6 @@
 #include "mongoose.h"
 #include "nx_model.h"
 #include "util.h"
-#include "video.h"
 
 #define DEV_MEM_PATH "/dev/mem"
 
@@ -21,11 +20,32 @@ static void **s_addrs;
 static int *s_hashs;
 static int s_fd;
 
-void init_liveview(void)
+void *mmap_lcd(const int fd, const off_t offset)
+{
+    off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
+    //print_log("offset = %llu, pa_offset = %llu", (unsigned long long)offset, (unsigned long long)pa_offset);
+    const size_t length = get_mmap_video_size();
+    void *p = mmap(NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, pa_offset);
+    if (p == MAP_FAILED) {
+        die("mmap() failed");
+    }
+
+    return p + (offset - pa_offset);
+}
+
+void munmap_lcd(void *addr, const off_t offset)
+{
+    off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
+    const size_t length = get_mmap_video_size();
+    if (munmap(addr - (offset - pa_offset), length) == -1) {
+        die("munmap() failed");
+    }
+}
+
+void liveview_init(void)
 {
     int i;
 
-    set_video_fps(get_default_video_fps());
     s_frame_width = get_frame_width();
     s_frame_height = get_frame_height();
     s_num_video_addrs = get_num_video_addrs();
@@ -49,7 +69,7 @@ void init_liveview(void)
     }
 }
 
-void destroy_liveview(void)
+void liveview_destroy(void)
 {
     int i;
 
@@ -65,14 +85,14 @@ void destroy_liveview(void)
     free(s_hashs);
 }
 
-void send_liveview(struct mg_connection *nc, struct http_message *hm)
+void liveview_send(struct mg_connection *nc, struct http_message *hm)
 {
     int i, j, hash;
     int x, y;
     static unsigned char *nv12_mem = NULL;
     unsigned char ys[800*480/4];
     int frame_size = get_frame_size();;
-    bool reduce_size = false; // TODO
+    bool reduce_size = true; // TODO
 
     if (reduce_size) {
         frame_size = s_frame_width * s_frame_height / 4 * 3;

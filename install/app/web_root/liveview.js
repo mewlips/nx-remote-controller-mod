@@ -74,7 +74,6 @@ function nv12toRgba2(nv12, rgba, width, height) {
         rgba[j+2] = rgb.b;
         rgba[j+3] = 255;
 
-
         rgba[j+4] = rgb.r;
         rgba[j+5] = rgb.g;
         rgba[j+6] = rgb.b;
@@ -117,7 +116,6 @@ function getLiveview() {
                 nv12toRgba2(nv12, buffer, 720, 480);
             }
             //debug("nv12.length = " + nv12.length);
-            ctx.scale(2,2);
             ctx.putImageData(imageData, 0, 0);
 
             //getLiveview();

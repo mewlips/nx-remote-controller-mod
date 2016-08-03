@@ -1,17 +1,15 @@
 #ifndef VIDEO_H_INCLUDED
 #define VIDEO_H_INCLUDED
 
+#include <stdbool.h>
+
 #include "mongoose.h"
 #include "network.h"
 
-extern void *mmap_lcd(const int fd, const off_t offset);
-extern void munmap_lcd(void *addr, const off_t offset);
-extern void init_video(void);
-extern void destroy_video(void);
-extern void set_video_fps(int fps);
-extern void set_video_evf(bool on);
-extern void *start_video_capture(Sockets *sockets);
-extern void stop_video_capture(void);
-extern void send_video(struct mg_connection *nc, struct http_message *hm);
+extern void video_init(void);
+extern void video_set_fps(int fps);
+extern void video_set_evf(bool on);
+extern void *video_start_capture(Sockets *sockets);
+extern void video_stop_capture(void);
 
 #endif

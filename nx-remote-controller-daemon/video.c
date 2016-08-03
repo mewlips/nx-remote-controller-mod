@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -11,6 +10,7 @@
 #include "nx_model.h"
 #include "util.h"
 #include "video.h"
+#include "liveview.h"
 
 //#define MMAP_SIZE_2 695296 // FIXME
 #define DEV_MEM_PATH "/dev/mem"
@@ -19,45 +19,23 @@ static int s_video_fps;
 static bool s_video_evf;
 static bool s_stopped;
 
-void *mmap_lcd(const int fd, const off_t offset)
+void video_init(void)
 {
-    off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
-    //print_log("offset = %llu, pa_offset = %llu", (unsigned long long)offset, (unsigned long long)pa_offset);
-    const size_t length = get_mmap_video_size();
-    void *p = mmap(NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, pa_offset);
-    if (p == MAP_FAILED) {
-        die("mmap() failed");
-    }
-
-    return p + (offset - pa_offset);
+    video_set_fps(get_default_video_fps());
 }
 
-void munmap_lcd(void *addr, const off_t offset)
-{
-    off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
-    const size_t length = get_mmap_video_size();
-    if (munmap(addr - (offset - pa_offset), length) == -1) {
-        die("munmap() failed");
-    }
-}
-
-void init_video(void)
-{
-    set_video_fps(get_default_video_fps());
-}
-
-void set_video_fps(int fps)
+void video_set_fps(int fps)
 {
     s_video_fps = fps;
     print_log("video fps = %d", s_video_fps);
 }
 
-void set_video_evf(bool on)
+void video_set_evf(bool on)
 {
     s_video_evf = on;
 }
 
-void *start_video_capture(Sockets *sockets)
+void *video_start_capture(Sockets *sockets)
 {
     int client_socket = sockets->client_socket;
     int fd;
@@ -158,7 +136,7 @@ void *start_video_capture(Sockets *sockets)
     return NULL;
 }
 
-void stop_video_capture(void)
+void video_stop_capture(void)
 {
     s_stopped = true;
 }

@@ -7,19 +7,25 @@ echo "#endif" >> version.h
 
 arm-none-linux-gnueabi-gcc \
         -DDEBUG -O4 -Wall -lpthread \
+        -DMG_DISABLE_HTTP_DIGEST_AUTH \
+        -DMG_DISABLE_MQTT \
+        -DMG_DISABLE_MD5 \
+        -DMG_DISABLE_JSON_RPC \
+        -DMG_DISABLE_SOCKETPAIR \
         -o nx-remote-controller-daemon \
+        api_server.c \
         command.c \
         executor.c \
+        input.c \
+        liveview.c \
+        main.c \
+        mongoose.c \
         network.c \
         notify.c \
-        main.c \
         nx_model.c \
+        osd.c \
         util.c \
         video.c \
         xwin.c \
-        mongoose.c \
-        api_server.c \
-        liveview.c \
-        osd.c \
     && cp -fv nx-remote-controller-daemon ../install/app/ \
     && cp -fv nx-remote-controller-daemon ../sd_install/remote/

@@ -48,7 +48,7 @@ void notify_evf_end(void)
     s_evf_end_notify = true;
 }
 
-void *start_notify(Sockets *sockets)
+void *notify_start(Sockets *sockets)
 {
     int client_socket = sockets->client_socket;
     FILE *xev_pipe = NULL;

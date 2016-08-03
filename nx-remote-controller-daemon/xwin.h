@@ -4,10 +4,9 @@
 #include "mongoose.h"
 #include "network.h"
 
-extern void init_xwin(void);
-extern void set_xwin_fps(int fps);
-extern void *start_xwin_capture(Sockets *sockets);
-extern void stop_xwin_capture(void);
-extern void send_osd(struct mg_connection *nc, struct http_message *hm);
+extern void xwin_init(void);
+extern void xwin_set_fps(int fps);
+extern void *xwin_start_capture(Sockets *sockets);
+extern void xwin_stop_capture(void);
 
 #endif

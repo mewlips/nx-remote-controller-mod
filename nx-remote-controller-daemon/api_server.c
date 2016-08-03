@@ -1,10 +1,11 @@
 #include "api_server.h"
+#include "executor.h"
+#include "input.h"
+#include "liveview.h"
 #include "mongoose.h"
 #include "nx_model.h"
-#include "util.h"
-#include "liveview.h"
 #include "osd.h"
-#include "executor.h"
+#include "util.h"
 
 static const char *s_http_port = "80";
 static struct mg_serve_http_opts s_http_server_opts;
@@ -38,7 +39,7 @@ static void handle_liveview_api(struct mg_connection *nc,
                                 struct mg_str *func)
 {
     if (mg_vcmp(func, "get") == 0) {
-        send_liveview(nc, hm);
+        liveview_send(nc, hm);
     }
 }
 
@@ -47,7 +48,7 @@ static void handle_osd_api(struct mg_connection *nc,
                            struct mg_str *func)
 {
     if (mg_ncasecmp(func->p, "get", 3) == 0) {
-        send_osd(nc, hm);
+        osd_send(nc, hm);
     }
 }
 
@@ -75,7 +76,7 @@ static void handle_input_api(struct mg_connection *nc,
             *p = ' ';
         }
         print_log("command = %s", command);
-        inject_input(command);
+        input_inject(command);
 
         mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
     }
@@ -83,10 +84,6 @@ static void handle_input_api(struct mg_connection *nc,
 
 static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix) {
     return uri->len > prefix->len && memcmp(uri->p, prefix->p, prefix->len) == 0;
-}
-
-static int is_equal(const struct mg_str *s1, const struct mg_str *s2) {
-    return s1->len == s2->len && memcmp(s1->p, s2->p, s2->len) == 0;
 }
 
 static void ev_handler(struct mg_connection *nc, int ev, void *p)
@@ -131,13 +128,10 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p)
     }
 }
 
-void run_api_server(void)
+void api_server_run(void)
 {
     struct mg_mgr mgr;
     struct mg_connection *nc;
-
-    init_liveview();
-    init_osd();
 
     mg_mgr_init(&mgr, NULL);
 
@@ -154,7 +148,4 @@ void run_api_server(void)
     }
 
     mg_mgr_free(&mgr);
-
-    destroy_liveview();
-    destroy_osd();
 }

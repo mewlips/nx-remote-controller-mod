@@ -1,46 +1,15 @@
-#include <arpa/inet.h>
-#include <errno.h>
-#include <fcntl.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 #include "command.h"
 #include "executor.h"
+#include "input.h"
 #include "util.h"
 #include "video.h"
 #include "xwin.h"
 
 #define LCD_CONTROL_SH_COMMAND "lcd_control.sh"
-#define NX_INPUT_INJECTOR_COMMAND "nx-input-injector"
 
-static FILE *s_inject_input_pipe = NULL;
-
-void init_executor(void)
-{
-    char command_line[256];
-
-    snprintf(command_line, sizeof(command_line), "%s %s",
-             get_chroot_command(), NX_INPUT_INJECTOR_COMMAND);
-    s_inject_input_pipe = popen(command_line, "w");
-    if (s_inject_input_pipe == NULL) {
-        print_error("popen() failed");
-    }
-}
-
-void destroy_executor(void)
-{
-    if (s_inject_input_pipe != NULL) {
-        if (pclose(s_inject_input_pipe) == -1) {
-            //print_error("pclose() failed!");
-        }
-    }
-}
-
-void *start_executor(Sockets *data)
+void *executor_start(Sockets *data)
 {
     FILE *client_sock;
     int client_socket = data->client_socket;;
@@ -125,14 +94,11 @@ void *start_executor(Sockets *data)
                 }
             }
         } else if (strncmp("inject_input=", command_line, 13) == 0) {
-            if (s_inject_input_pipe != NULL) {
-                fprintf(s_inject_input_pipe, "%s\n", command_line + 13);
-                fflush(s_inject_input_pipe);
-            }
+            input_inject(command_line + 13);
         } else if (strncmp("vfps=", command_line, 5) == 0) {
-            set_video_fps(atoi(command_line + 5));
+            video_set_fps(atoi(command_line + 5));
         } else if (strncmp("xfps=", command_line, 5) == 0) {
-            set_xwin_fps(atoi(command_line + 5));
+            xwin_set_fps(atoi(command_line + 5));
         } else if (strncmp("lcd=", command_line, 4) == 0) {
             char command[256];
             char *arg = command_line + 4;
@@ -174,12 +140,4 @@ error:
     return NULL;
 }
 
-void inject_input(const char *command)
-{
-    //print_log("s_inject_input_pipe = %p", s_inject_input_pipe);
-    if (s_inject_input_pipe != NULL) {
-        print_log("command = %s", command);
-        fprintf(s_inject_input_pipe, "%s\n", command);
-        fflush(s_inject_input_pipe);
-    }
-}
+
