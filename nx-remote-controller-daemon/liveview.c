@@ -9,18 +9,19 @@
 
 #include "mongoose.h"
 #include "nx_model.h"
+#include "osd.h"
+#include "status.h"
 #include "util.h"
 
 #define DEV_MEM_PATH "/dev/mem"
 
-static int s_frame_width;
-static int s_frame_height;
 static int s_num_video_addrs;
 static void **s_addrs;
 static int *s_hashs;
 static int s_fd;
+static unsigned char *s_nv12_mem;
 
-void *mmap_lcd(const int fd, const off_t offset)
+static void *mmap_lcd(const int fd, const off_t offset)
 {
     off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
     //print_log("offset = %llu, pa_offset = %llu", (unsigned long long)offset, (unsigned long long)pa_offset);
@@ -33,7 +34,7 @@ void *mmap_lcd(const int fd, const off_t offset)
     return p + (offset - pa_offset);
 }
 
-void munmap_lcd(void *addr, const off_t offset)
+static void munmap_lcd(void *addr, const off_t offset)
 {
     off_t pa_offset = offset & ~(sysconf(_SC_PAGE_SIZE) - 1);
     const size_t length = get_mmap_video_size();
@@ -46,8 +47,6 @@ void liveview_init(void)
 {
     int i;
 
-    s_frame_width = get_frame_width();
-    s_frame_height = get_frame_height();
     s_num_video_addrs = get_num_video_addrs();
 
     s_addrs = (void **)malloc(sizeof(void *) * s_num_video_addrs);
@@ -85,53 +84,91 @@ void liveview_destroy(void)
     free(s_hashs);
 }
 
-void liveview_send(struct mg_connection *nc, struct http_message *hm)
+static void liveview_get(bool low_quality,
+                         int *frame_width, int *frame_height, int *frame_size)
 {
     int i, j, hash;
-    int x, y;
-    static unsigned char *nv12_mem = NULL;
-    unsigned char ys[800*480/4];
-    int frame_size = get_frame_size();;
-    bool reduce_size = true; // TODO
+    HevcState hevc_state;
 
-    if (reduce_size) {
-        frame_size = s_frame_width * s_frame_height / 4 * 3;
+    *frame_width = get_frame_width();
+    *frame_height = get_frame_height();
+
+    hevc_state = get_hevc_state();
+    if (hevc_state == HEVC_STATE_ON) {
+        MovieSize movie_size = get_movie_size();
+        //print_log("movie_size = %d", movie_size);
+        if (movie_size == MOVIE_SIZE_4K) {
+            *frame_height = 380;
+        } else if (movie_size == MOVIE_SIZE_UHD_FHD_HD) {
+            *frame_height = 404;
+        } else if (movie_size == MOVIE_SIZE_VGA) {
+            *frame_width = 640;
+        }
+    }
+
+    if (low_quality) {
+        *frame_size = *frame_width * *frame_height / 4 * 3;
+    } else {
+        *frame_size = *frame_width * *frame_height * 3 / 2;
     }
 
     for (i = 0; i < s_num_video_addrs; i++) {
         unsigned char *p = s_addrs[i];
 
         hash = 0;
-        for (j = 0; j < s_frame_width * 2; j++) {
+        for (j = 0; j < *frame_width * 2; j++) {
             hash += p[j];
         }
         if (s_hashs[i] != 0 && hash != s_hashs[i]) {
-            nv12_mem = p;
-            print_log("[%d] framesize = %d", i, frame_size);
+            s_nv12_mem = p;
+            print_log("[%d] framesize = %d", i, *frame_size);
         }
 
         s_hashs[i] = hash;
     }
+}
 
-    if (nv12_mem != NULL) {
+static void reduce_ys(unsigned char *ys, int frame_width, int frame_height)
+{
+    int i, x, y;
+
+    for (i = 0, y = 0; y < frame_height; y+=2) {
+        for (x = 0; x < frame_width; x+=2) {
+            ys[i++] = s_nv12_mem[y * frame_width + x];
+        }
+    }
+}
+
+void liveview_http_send(struct mg_connection *nc,
+                        struct http_message *hm,
+                        bool reduce_size)
+{
+    int frame_width, frame_height, frame_size;
+    unsigned char ys[800*480/4];
+
+    if (is_nx1() && osd_is_evf()) {
+        mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
+                      "Content-Type: text/plain; charset=x-user-defined\r\n"
+                      "\r\n", 0);
+        return;
+    }
+
+    liveview_get(reduce_size, &frame_width, &frame_height, &frame_size);
+
+    if (s_nv12_mem != NULL) {
         if (reduce_size) {
-            i = 0;
-            for (y = 0; y < s_frame_height; y+=2) {
-                for (x = 0; x < s_frame_width; x+=2) {
-                    ys[i++] = nv12_mem[y * s_frame_width + x];
-                }
-            }
+            reduce_ys(ys, frame_width, frame_height);
         }
 
         mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
                       "Content-Type: text/plain; charset=x-user-defined\r\n"
                       "\r\n", frame_size);
         if (reduce_size) {
-            mg_send(nc, ys, s_frame_width * s_frame_height / 4);
-            mg_send(nc, nv12_mem + (s_frame_width * s_frame_height),
-                    s_frame_width * s_frame_height / 4 * 2);
+            mg_send(nc, ys, frame_width * frame_height / 4);
+            mg_send(nc, s_nv12_mem + (frame_width * frame_height),
+                    frame_width * frame_height / 4 * 2);
         } else {
-            mg_send(nc, nv12_mem, frame_size);
+            mg_send(nc, s_nv12_mem, frame_size);
         }
     } else {
         mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"

@@ -34,7 +34,11 @@ function getKeyMapping(key) {
     } else if (key == 'FN') {
         return 'XF86HomePage';
     } else if (key == 'EV') {
-        return 'XF86Reload';
+        if (isNx1()) {
+            return 'XF86WWW';
+        } else {
+            return 'XF86Reload';
+        }
     } else if (key == 'PB') {
         return 'XF86Tools';
     } else if (key == 'AF_MODE') {
@@ -134,7 +138,7 @@ function onKeyDown(key) {
     });
 }
 
-function oKeyUp(key) {
+function onKeyUp(key) {
     $.ajax({
         url: '/api/v1/input/inject?keyup=' + getKeyMapping(key),
         success: function(data) {
@@ -142,7 +146,7 @@ function oKeyUp(key) {
     });
 }
 
-function onMouseDown(x, y) {
+function onMouseDown() {
     $.ajax({
         url: '/api/v1/input/inject?mousedown=1',
         success: function(data) {
@@ -158,10 +162,114 @@ function onMouseMove(x, y) {
     });
 }
 
-function onMouseUp(x, y) {
+function onMouseUp() {
     $.ajax({
         url: '/api/v1/input/inject?mouseup=1',
         success: function(data) {
         }
     });
 }
+
+var s1Down = false;
+var s2Down = false;
+var evDown = false;
+var shutterStartX;
+var shutterStartY;
+
+function setupInput() {
+
+    //$("#button-af-on").on("tap", function() { onKey('AF_ON'); });
+    //$("#button-mf-zoom").on("tap", function() { onKey('MF_ZOOM'); });
+    $("#button-ev").on("click", function() {
+        if (evDown) {
+            onKeyUp('EV');
+            evDown = false;
+        } else {
+            onKeyDown('EV');
+            evDown = true;
+        }
+    });
+
+    function shutterStart(ev, mouse) {
+        ev.preventDefault();
+        if (mouse) {
+            shutterStartY = ev.pageY;
+        } else {
+            shutterStartY = ev.originalEvent.touches[0].pageY;
+        }
+        if (s1Down) {
+            onKeyUp('S1');
+            s1Down = false;
+            $('#button-shutter').css('transform', "translateY(0px)");
+            $('#button-shutter').css('box-shadow', "0 14px 0 0 #888");
+        }
+        onKeyDown('S1');
+        s1Down = true;
+        $('#button-shutter').css('transform', "translateY(7px)");
+        $('#button-shutter').css('box-shadow', "0 7px 0 0 #888");
+    }
+
+    function shutterPress(ev, mouse) {
+        var y;
+        if (mouse) {
+            y = ev.pageY;
+        } else {
+            y = ev.originalEvent.touches[0].pageY;
+        }
+        if (shutterStartY < y - 5) {
+            if (s1Down && !s2Down) {
+                $('#button-shutter').css('transform', "translateY(14px)");
+                $('#button-shutter').css('box-shadow', "none");
+                onKeyDown('S2');
+                s2Down = true;
+            }
+        } else if (shutterStartY > y) {
+            if (s2Down) {
+                $('#button-shutter').css('transform', "translateY(7px)");
+                $('#button-shutter').css('box-shadow', "0 7px 0 0 #888");
+                onKeyUp('S2');
+                s2Down = false;
+            }
+        }
+    }
+
+    function shutterEnd(ev) {
+        if (s2Down) {
+            $('#button-shutter').css('transform', "translateY(7px)");
+            $('#button-shutter').css('box-shadow', "0 7px 0 0 #888");
+            onKeyUp('S2');
+            s2Down = false;
+        }
+        if (s1Down) {
+            $('#button-shutter').css('transform', "translateY(0px)");
+            $('#button-shutter').css('box-shadow', "0 14px 0 0 #888");
+            onKeyUp('S1');
+            s1Down = false;
+        }
+    }
+
+    $('#button-shutter').on('mousedown', function (ev) {
+        shutterStart(ev, true);
+    });
+    $("#button-shutter").on("touchstart", function (ev) {
+        shutterStart(ev, false);
+    });
+
+    $(window).on('mousemove ', function (ev) {
+        shutterPress(ev, true);
+    });
+    $('#button-shutter').on('touchmove', function (ev) {
+        shutterPress(ev, false);
+    });
+
+    $(window).on('mouseup', function (ev) {
+        shutterEnd(ev);
+    });
+    $('#button-shutter').on('touchcancel', function (ev) {
+        shutterEnd(ev);
+    });
+    $('#button-shutter').on('touchend', function (ev) {
+        shutterEnd(ev);
+    });
+}
+

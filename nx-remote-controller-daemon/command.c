@@ -1,4 +1,6 @@
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -58,4 +60,16 @@ const char *get_chroot_command(void)
     }
 
     return s_chroot_command;
+}
+
+int systemf(const char *fmt, ...)
+{
+    char command[256];
+    va_list arg_ptr;
+
+    va_start(arg_ptr, fmt);
+    vsnprintf(command, sizeof(command), fmt, arg_ptr);
+    va_end(arg_ptr);
+
+    return system(command);
 }

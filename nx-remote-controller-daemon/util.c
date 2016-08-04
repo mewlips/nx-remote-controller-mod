@@ -10,11 +10,6 @@ void die(const char *msg)
     exit(EXIT_FAILURE);
 }
 
-void print_error(const char *msg)
-{
-    perror(msg);
-}
-
 long long get_current_time(void)
 {
     struct timeval te; 

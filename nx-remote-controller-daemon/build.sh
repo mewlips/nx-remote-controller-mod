@@ -15,17 +15,17 @@ arm-none-linux-gnueabi-gcc \
         -o nx-remote-controller-daemon \
         api_server.c \
         command.c \
-        executor.c \
         input.c \
+        lcd.c \
+        led.c \
         liveview.c \
         main.c \
         mongoose.c \
         network.c \
-        notify.c \
         nx_model.c \
         osd.c \
+        shutter.c \
+        status.c \
         util.c \
-        video.c \
-        xwin.c \
     && cp -fv nx-remote-controller-daemon ../install/app/ \
     && cp -fv nx-remote-controller-daemon ../sd_install/remote/

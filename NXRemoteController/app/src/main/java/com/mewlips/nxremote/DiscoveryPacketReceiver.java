@@ -9,12 +9,11 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import static com.mewlips.nxremote.Configurations.*;
-
-/**
- * Created by mewlips on 16. 6. 29.
- */
 public class DiscoveryPacketReceiver extends Thread {
+
+    private static final int DISCOVERY_UDP_PORT = 5681;
+    private static final int DISCOVERY_PACKET_SIZE = 32;
+
     public interface DiscoveryListener {
         void onFound(String version, String model, String ipAddress);
     }
@@ -48,11 +47,12 @@ public class DiscoveryPacketReceiver extends Thread {
                 byte[] data = packet.getData();
                 String discoveryMessage = new String(data);
                 String[] cameraInfos = discoveryMessage.split("\\|");
-                if (cameraInfos.length == 4) {
+                if (cameraInfos.length == 5) {
                     String header = cameraInfos[0];
                     String version = cameraInfos[1];
                     String model = cameraInfos[2];
-                    // cameraInfos[3] is garbage
+                    //String fwVersion = cameraInfos[3];
+                    // cameraInfos[4] is garbage
                     String ipAddress = packet.getAddress().getHostAddress();
 
                     if (header.equals("NX_REMOTE")) {

@@ -2,26 +2,24 @@
 #define NETWORK_H_INCLUDED
 
 enum {
-    PORT_NOTIFY = 5677,
-    PORT_VIDEO = 5678,
-    PORT_XWIN = 5679,
-    PORT_EXECUTOR = 5680,
     PORT_UDP_BROADCAST = 5681,
 };
 
-typedef struct {
-    int server_socket;
-    int client_socket;
-} Sockets;
-
-typedef void *(*OnConnect)(Sockets *sockets);
+#define DISCOVERY_PACKET_SIZE 32
+#define MAX_NUM_CAMERAS 10
 
 typedef struct {
+    long long discovered_time;
+    char ip_address[16];
     int port;
-    OnConnect on_connect;
-} ListenSocketData;
+    char discovery_packet[DISCOVERY_PACKET_SIZE];
+} DiscoveredCameraInfo;
 
-extern void listen_socket(const int port, const OnConnect on_connect);
-extern void broadcast_discovery_packet(const int port);
+extern const char *network_get_wifi_ip_address(void);
+extern int network_get_discovered_cameras(char *json_buffer, size_t size);
+extern void network_broadcast_discovery_packet(const int port);
+extern void network_receive_discovery_packet(const int port);
+extern void network_init(void);
+extern void network_destroy(void);
 
 #endif

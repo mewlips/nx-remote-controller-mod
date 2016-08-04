@@ -6,7 +6,6 @@ BUILDROOT_DIR=buildroot-2016.05
 
 tar_tools() {
     pushd output/target
-    cp -fv ../../../osd_cap.sh usr/bin
     mkdir -p caps tmp
     tar --owner=root --group=root -chvf ../../../../install/app/tools.tar \
         bin/busybox \
@@ -21,7 +20,6 @@ tar_tools() {
         tmp/ \
         usr/bin/convert \
         usr/bin/nx-input-injector \
-        usr/bin/osd_cap.sh \
         usr/bin/strace \
         usr/bin/xdotool \
         usr/bin/xev-nx \

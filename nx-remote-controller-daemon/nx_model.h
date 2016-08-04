@@ -29,7 +29,6 @@ extern bool is_nx500(void);
 extern int get_frame_width(void);
 extern int get_frame_height(void);
 extern int get_frame_size(void);
-extern int get_xwin_frame_size(void);
 extern int get_default_video_fps(void);
 extern int get_default_xwin_fps(void);
 extern off_t get_video_addr(int index);

@@ -112,21 +112,6 @@ int get_frame_size(void)
     return get_frame_width() * get_frame_height() * 3 / 2;
 }
 
-int get_xwin_frame_size(void)
-{
-    return get_frame_width() * get_frame_height() * 4;
-}
-
-int get_default_video_fps(void)
-{
-    return is_new_nx_model() ? 5 : 3;
-}
-
-int get_default_xwin_fps(void)
-{
-    return is_new_nx_model() ? 5 : 3;
-}
-
 static off_t s_addrs_nx300[] = {
     0xc6a14000,
     0xc6db6000,

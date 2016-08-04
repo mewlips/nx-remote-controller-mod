@@ -20,25 +20,4 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
-    <style name="modeButton" parent="@android:style/TextAppearance.Small">
-        <item name="android:layout_width">40dp</item>
-        <item name="android:layout_height">40dp</item>
-        <item name="android:layout_marginBottom">10dp</item>
-        <item name="android:layout_marginRight">10dp</item>
-        <item name="android:textColor">@color/colorKeypadButtonTextNormal</item>
-        <item name="android:gravity">center</item>
-        <item name="android:background">@drawable/circle</item>
-        <item name="android:onClick">onButtonClick</item>
-    </style>
-
-    <style name="keypadButton" parent="@android:style/TextAppearance.Small">
-        <item name="android:layout_width">80dp</item>
-        <item name="android:layout_height">45dp</item>
-        <item name="android:textColor">#FFFFFF</item>
-        <item name="android:gravity">center</item>
-        <item name="android:background">@drawable/rectangle</item>
-        <item name="android:onClick">onButtonClick</item>
-        <item name="android:layout_margin">2dp</item>
-    </style>
-
 </resources>

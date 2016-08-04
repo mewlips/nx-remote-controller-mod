@@ -7,7 +7,6 @@ public class NXCameraInfo {
     private String daemonVersion;
     private String model;
     private String ipAddress;
-    private boolean onRecording;
 
     public NXCameraInfo(String daemonVersion, String model, String ipAddress) {
         this.daemonVersion = daemonVersion;
@@ -25,14 +24,6 @@ public class NXCameraInfo {
 
     public String getIpAddress() {
         return ipAddress;
-    }
-
-    public boolean isRecording() {
-        return onRecording;
-    }
-
-    public void setRecording(boolean onRecording) {
-        this.onRecording = onRecording;
     }
 
     public boolean isNewNxModel() {

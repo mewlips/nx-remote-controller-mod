@@ -40,17 +40,4 @@
         </menu>
     </item>
 
-    <!--<item android:title="NXRemoteController">-->
-        <!--<menu>-->
-            <!--<item-->
-                <!--android:id="@+id/nav_camera_screen_liveview"-->
-                <!--android:icon="@drawable/ic_menu_manage"-->
-                <!--android:title="Settings" />-->
-            <!--<item-->
-                <!--android:id="@+id/nav_camera_screen_off"-->
-                <!--android:icon="@drawable/ic_menu_send"-->
-                <!--android:title="About" />-->
-        <!--</menu>-->
-    <!--</item>-->
-
 </menu>
