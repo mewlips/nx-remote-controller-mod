@@ -121,7 +121,7 @@ static void liveview_get(bool low_quality,
         }
         if (s_hashs[i] != 0 && hash != s_hashs[i]) {
             s_nv12_mem = p;
-            print_log("[%d] framesize = %d", i, *frame_size);
+            //print_log("[%d] framesize = %d", i, *frame_size);
         }
 
         s_hashs[i] = hash;
@@ -145,6 +145,8 @@ void liveview_http_send(struct mg_connection *nc,
 {
     int frame_width, frame_height, frame_size;
     unsigned char ys[800*480/4];
+    long long start_time = get_current_time();
+    long long end_time;
 
     if (is_nx1() && osd_is_evf()) {
         mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
@@ -175,4 +177,8 @@ void liveview_http_send(struct mg_connection *nc,
                       "Content-Type: text/plain; charset=x-user-defined\r\n"
                       "\r\n", 0);
     }
+
+    end_time = get_current_time();
+    print_log("framesize = %d, time = %lld",
+              frame_size, end_time - start_time);
 }

@@ -124,6 +124,11 @@ function getOsd() {
         data: { "hashs" : hashs_str },
         timeout: 1000,
         success: function(str) {
+            if (str.length == 0) {
+                setTimeout(getOsd, osdTimeoutInterval);
+                return;
+            }
+
             var data = [];
             var index = 0;
             for (var i = 0; i < str.length; i++) {
