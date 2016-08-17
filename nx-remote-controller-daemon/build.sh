@@ -7,6 +7,7 @@ echo "#endif" >> version.h
 
 arm-none-linux-gnueabi-gcc \
         -DDEBUG -O4 -Wall -lpthread \
+        -I../externals/mongoose \
         -DMG_DISABLE_HTTP_DIGEST_AUTH \
         -DMG_DISABLE_MQTT \
         -DMG_DISABLE_MD5 \
@@ -20,7 +21,7 @@ arm-none-linux-gnueabi-gcc \
         led.c \
         liveview.c \
         main.c \
-        mongoose.c \
+        ../externals/mongoose/mongoose.c \
         network.c \
         nx_model.c \
         osd.c \
