@@ -7,7 +7,7 @@ BUILDROOT_DIR=buildroot-2016.05
 tar_tools() {
     pushd output/target
     mkdir -p caps tmp
-    tar --owner=root --group=root -chvf ../../../../install/app/tools.tar \
+    tar --owner=root --group=root -chvf ../../../../../install/app/tools.tar \
         bin/busybox \
         caps/ \
         lib/ld-linux.so.3 \
@@ -51,9 +51,9 @@ wget -c https://buildroot.org/downloads/$TARBALL
 
 if [ -f $TARBALL ] && [ ! -d $BUILDROOT_DIR ]; then
     tar -xjf $TARBALL
-    (cd $BUILDROOT_DIR/package; ln -s ../../xev-nx)
+    (cd $BUILDROOT_DIR/package; ln -s ../../../../xev-nx)
     (cd $BUILDROOT_DIR/package; ln -s ../../xdotool-nx)
-    (cd $BUILDROOT_DIR/package; ln -s ../../nx-input-injector)
+    (cd $BUILDROOT_DIR/package; ln -s ../../../../nx-input-injector)
     (cd $BUILDROOT_DIR; patch -p1 < ../patch-001-libxdo-xev-nx.patch)
     (cd $BUILDROOT_DIR; patch -p1 < ../patch-002-nx-input-injector.patch)
 fi
@@ -61,5 +61,5 @@ fi
 cp -fv nx_remote_controller_mod_defconfig $BUILDROOT_DIR/configs
 cd $BUILDROOT_DIR
 make nx_remote_controller_mod_defconfig && make && tar_tools && \
-    mkdir -p ../../sd_install/remote/tools && \
-    tar -C ../../sd_install/remote/tools -xf ../../install/app/tools.tar 
+    mkdir -p ../../../sd_install/remote/tools && \
+    tar -C ../../../sd_install/remote/tools -xf ../../../install/app/tools.tar

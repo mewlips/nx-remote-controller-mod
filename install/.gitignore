@@ -2,3 +2,4 @@ app/tools/
 app/tools.tar
 app/nx-remote-controller-daemon
 app/externals/
+app/web_root/

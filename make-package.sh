@@ -5,6 +5,8 @@ ZIP_FILE=nx-remote-controller-mod-v${VERSION}_nx1_nx500.zip
 SD_ZIP_FILE=nx-remote-controller-mod-v${VERSION}_nx300.zip
 NX500_NX1_MODDING=externals/nx500_nx1_modding
 EXTERNALS=install/app/externals
+INSTALL_WEB_ROOT=install/app/web_root
+SD_INSTALL_WEB_ROOT=sd_install/remote/web_root
 
 rm -fv $ZIP_FILE
 rm -fv $SD_ZIP_FILE
@@ -15,6 +17,10 @@ cp -fv $NX500_NX1_MODDING/nx-model/nx-model $EXTERNALS/
 cp -fv $NX500_NX1_MODDING/poker $EXTERNALS/
 cp -fv $NX500_NX1_MODDING/popup_ok $EXTERNALS/
 cp -fv $NX500_NX1_MODDING/popup_timeout $EXTERNALS/
+
+mkdir -pv $INSTALL_WEB_ROOT $SD_INSTALL_WEB_ROOT
+cp -fv web_root/*.{js,html} $INSTALL_WEB_ROOT/
+cp -fv web_root/*.{js,html} $SD_INSTALL_WEB_ROOT/
 
 (cd install; zip -r ../$ZIP_FILE app/ nx-on-wake/)
 (cd sd_install; zip -r ../$SD_ZIP_FILE autoexec.sh remote/)
