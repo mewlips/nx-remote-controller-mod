@@ -1,11 +1,21 @@
 #!/bin/sh
 
 VERSION=$(cat version)
-ZIP_FILE=nx-remote-controller-mod-v${VERSION}_nx500.zip
+ZIP_FILE=nx-remote-controller-mod-v${VERSION}_nx1_nx500.zip
 SD_ZIP_FILE=nx-remote-controller-mod-v${VERSION}_nx300.zip
+NX500_NX1_MODDING=externals/nx500_nx1_modding
+EXTERNALS=install/app/externals
 
-rm -f $ZIP_FILE
-rm -f $SD_ZIP_FILE
+rm -fv $ZIP_FILE
+rm -fv $SD_ZIP_FILE
+
+mkdir -pv $EXTERNALS
+cp -fv $NX500_NX1_MODDING/mod_gui/mod_gui $EXTERNALS/
+cp -fv $NX500_NX1_MODDING/nx-model/nx-model $EXTERNALS/
+cp -fv $NX500_NX1_MODDING/poker $EXTERNALS/
+cp -fv $NX500_NX1_MODDING/popup_ok $EXTERNALS/
+cp -fv $NX500_NX1_MODDING/popup_timeout $EXTERNALS/
+
 (cd install; zip -r ../$ZIP_FILE app/ nx-on-wake/)
 (cd sd_install; zip -r ../$SD_ZIP_FILE autoexec.sh remote/)
-cp -f NXRemoteController/app/build/outputs/apk/app-debug.apk NXRemoteController-v$VERSION.apk
+cp -fv NXRemoteController/app/build/outputs/apk/app-debug.apk NXRemoteController-v$VERSION.apk

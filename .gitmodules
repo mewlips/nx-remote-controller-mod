@@ -1,3 +1,6 @@
 [submodule "externals/mongoose"]
 	path = externals/mongoose
 	url = https://github.com/cesanta/mongoose.git
+[submodule "externals/nx500_nx1_modding"]
+	path = externals/nx500_nx1_modding
+	url = https://github.com/ottokiksmaler/nx500_nx1_modding.git
