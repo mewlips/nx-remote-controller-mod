@@ -8,8 +8,9 @@
 
 #include "command.h"
 #include "input.h"
-#include "util.h"
+#include "nx_model.h"
 #include "status.h"
+#include "util.h"
 
 #define NX_INPUT_INJECTOR_COMMAND "nx-input-injector"
 #define XEV_NX_COMMAND "xev-nx"
@@ -46,7 +47,13 @@ static void process_mode(const char *key)
         set_dial_mode(MODE_C2);
     } else if (!strcmp(key, "F1") ||
                !strcmp(key, "XF86KbdBrightnessDown")) {
-        set_dial_mode(MODE_SAS);
+        if (is_old_nx_model()) {
+            set_dial_mode(MODE_NX300_LENS_PRIORITY);
+        } else {
+            set_dial_mode(MODE_SAS);
+        }
+    } else if (!strcmp(key, "F3")) {
+        set_dial_mode(MODE_NX300_WIFI);
     }
 }
 

@@ -1,6 +1,7 @@
 var nxModelName;
 var nxFwVer;
 var modalEnabled = false;
+var keepAliveTimer;
 
 function getCameraInfo() {
     $.ajax({
@@ -28,6 +29,25 @@ function getCameraInfo() {
             } else {
                 $('.nx1-nx500-only').hide();
             }
+            if (isNx300()) {
+                $('.nx300-only').show();
+            } else {
+                $('.nx300-only').hide();
+            }
+            if (!isNx1()) {
+                $('.not-nx1-only').show();
+            } else {
+                $('.not-nx1-only').hide();
+            }
+
+            if (keepAliveTimer) {
+                clearInterval(keepAliveTimer);
+            }
+            var keepAliveKey = isNx300() ? 'EV' : 'PWON';
+            onKey(keepAliveKey);
+            keepAliveTimer = setInterval(function () {
+                onKey(keepAliveKey)
+            }, 25*1000);
         }
     });
 }
@@ -38,6 +58,10 @@ function isNx1() {
 
 function isNx500() {
     return nxModelName == 'NX500';
+}
+
+function isNx300() {
+    return nxModelName == 'NX300';
 }
 
 function getCameraStatus() {
@@ -63,7 +87,7 @@ function getCameraStatus() {
                 html += batteryIcon + ' ' + status.battery_percent + '%' +
                         (status.battery_charging == true ?
                          ' (<i class="fa fa-bolt"></i>)' : "");
-            } else if (nxModelName == "NX500") {
+            } else {
                 var batteryIcon;
                 if (status.battery_level == 5) {
                     batteryIcon = '<i class="fa fa-battery-4"></i>';
@@ -80,8 +104,6 @@ function getCameraStatus() {
                 html += batteryIcon +
                         (status.battery_charging == true ?
                          ' <i class="fa fa-bolt"></i>' : "");
-            } else {
-                // TODO: NX300
             }
 
             html += ' / Mode: ' + status.mode;
@@ -176,8 +198,6 @@ function setupRemoteController() {
     setupInput();
 
     controlLcd('on');
-    onKey('PWON');
-    setInterval(function () { onKey('PWON') }, 25*1000);
     setInterval(getCameraStatus, 1000);
 
     if (typeof(Storage) !== "undefined") {

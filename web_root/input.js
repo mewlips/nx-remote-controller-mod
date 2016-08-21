@@ -67,6 +67,8 @@ function getKeyMapping(key) {
         return 'XF86AudioNext';
     } else if (key == 'JOG_CCW') {
         return 'XF86AudioPrev';
+    } else if (key == 'MODE_WIFI') { // NX300: Wi-Fi Mode
+        return 'F3';
     } else if (key == 'MODE_SCENE_GET') {
         return 'F4';
     } else if (key == 'MODE_SCENE') {
@@ -155,6 +157,12 @@ function onMouseDown() {
 }
 
 function onMouseMove(x, y) {
+    if (isNx300()) {
+        var temp = y;
+        y = x;
+        x = 480 - temp;
+        y = y;
+    }
     $.ajax({
         url: '/api/v1/input/inject?mousemove=' + x + '-' + y,
         success: function(data) {

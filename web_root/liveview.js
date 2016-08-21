@@ -167,8 +167,14 @@ function getLiveview(low) {
                 nv12.push(str.charCodeAt(i));
             }
 
-            if (cvs.width != 720) {
-                cvs.width = 720;
+            if (isNx300()) {
+                if (cvs.width != 800) {
+                    cvs.width = 800;
+                }
+            } else { // NX1 or NX500
+                if (cvs.width != 720) {
+                    cvs.width = 720;
+                }
             }
             if (cvs.height != 480) {
                 cvs.height = 480;
@@ -191,6 +197,10 @@ function getLiveview(low) {
                 draw(nv12, 720, 480, false); // Normal liveview
             } else if (nv12.length == 720 * 480 / 4 * 3) {
                 draw(nv12, 720, 480, true); // Normal liveview (low)
+            } else if (nv12.length == 800 * 480 * 3 / 2) {
+                draw(nv12, 800, 480, false); // Normal liveview (NX300)
+            } else if (nv12.length == 800 * 480 * 3 / 2 / 2) {
+                draw(nv12, 800, 480, true); // Normal liveview (NX300, low)
             } else {
                 clearLiveview();
             }

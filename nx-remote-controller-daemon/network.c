@@ -17,7 +17,6 @@
 #include "util.h"
 #include "version.h"
 
-
 static bool s_stopped;
 static char s_wifi_ip_address[32];
 static DiscoveredCameraInfo s_cameras[MAX_NUM_CAMERAS];
@@ -32,7 +31,11 @@ const char *network_get_wifi_ip_address(void)
 
     ifr.ifr_addr.sa_family = AF_INET;
 
-    strncpy(ifr.ifr_name, "mlan0", IFNAMSIZ-1);
+    if (is_new_nx_model()) {
+        strncpy(ifr.ifr_name, "mlan0", IFNAMSIZ-1);
+    } else {
+        strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
+    }
     if (ioctl(sock, SIOCGIFADDR, &ifr) == -1) {
         print_error("ioctl() failed");
         s_wifi_ip_address[0] = '\0';

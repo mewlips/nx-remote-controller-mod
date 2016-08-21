@@ -33,7 +33,9 @@ typedef enum {
     MODE_M = 5,
     MODE_C1 = 6,
     MODE_C2 = 7,
-    MODE_SAS = 8
+    MODE_SAS = 8,
+    MODE_NX300_LENS_PRIORITY = 100,
+    MODE_NX300_WIFI = 101 
 } DialMode;
 
 extern HevcState get_hevc_state(void);

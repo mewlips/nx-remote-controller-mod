@@ -42,6 +42,11 @@ for d in `ls /var/lib/connman`; do
         echo "Connecting to $ESSID using $d"
         dbus-send --system --print-reply --dest=net.connman "/net/connman/service/$d" net.connman.Service.Connect
         if [ "$?" -eq "0" ]; then #We've successfully connected
+            ip=$(ifconfig wlan0 | grep inet | sed 's/.*addr://' | sed 's/ .*//')
+            chroot /mnt/mmc/remote/tools yad \
+                --center --timeout=10 --timeout-indicator=bottom \
+                --no-buttons --no-focus --text="<i>IP Address</i> <span color='blue'><b><big>$ip</big></b></span>" &
+            chroot /mnt/mmc/remote/tools xdotool mousedown 2 mouseup 2
             sleep 2
             /mnt/mmc/remote/start.sh
         fi

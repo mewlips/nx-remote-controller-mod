@@ -150,7 +150,7 @@
           <ul class="dropdown-menu">
             <li><a href="#" onclick="controlLcd('on');">On</a></li>
             <li><a href="#" onclick="controlLcd('off');">Off</a></li>
-            <li><a href="#" onclick="controlLcd('video');">Video Only</a></li>
+            <li class="nx1-nx500-only"><a href="#" onclick="controlLcd('video');">Video Only</a></li>
           </ul>
         </li>
         <li class="dropdown nx500-only">
@@ -174,7 +174,7 @@
           </ul>
         </li>
 
-        <li class="dropdown">
+        <li class="dropdown nx1-nx500-only">
           <a class="dropdown-toggle" data-toggle="dropdown" href="#">
             Drive <span class="caret"></span>
           </a>
@@ -264,12 +264,16 @@
               <a href="#">Scene</a></li>
             <li class="col-xs-6" onclick="onKey('MODE_SMART');">
               <a href="#">Auto</a></li>
-            <li class="col-xs-6" onclick="onKey('MODE_CUSTOM1');">
+            <li class="col-xs-6 nx1-nx500-only" onclick="onKey('MODE_CUSTOM1');">
               <a href="#">Custom Mode 1</a></li>
-            <li class="col-xs-6" onclick="onKey('MODE_CUSTOM2');">
+            <li class="col-xs-6 nx1-nx500-only" onclick="onKey('MODE_CUSTOM2');">
               <a href="#">Custom Mode 2</a></li>
             <li class="col-xs-6 nx500-only" onclick="onKey('MODE_SAS');">
               <a href="#">Samsung Auto Shot</a></li>
+            <li class="col-xs-6 nx300-only" onclick="onKey('MODE_SAS');">
+              <a href="#">Lense Priority</a></li>
+            <li class="col-xs-6 nx300-only" onclick="onKey('MODE_WIFI');">
+              <a href="#">Wi-Fi</a></li>
           </ul>
         </span>
       </div>
@@ -281,7 +285,7 @@
                 style="width:21%; margin-top:2%; margin-left:3%; margin-right:3%"
                 onclick="onKey('UP');">
           <span class="glyphicon glyphicon-triangle-top"></span>
-          <span class="nx1-nx500-only">DISP</span>
+          <span>DISP</span>
         </button>
         <button class="btn btn-primary btn-sm btn-responsive round"
                 style="width:20%; margin-bottom:2%; margin-left:7%"
@@ -295,7 +299,7 @@
                 style="width:21%; margin-left:10.3%"
                 onclick="onKey('LEFT');">
           <span class="glyphicon glyphicon-triangle-left"></span>
-          <span class="nx500-only">Drive</span></button>
+          <span class="not-nx1-only">Drive</span></button>
         </button>
         <button class="btn btn-warning btn-sm btn-responsive sharp"
                 style="width:21%"
@@ -303,7 +307,7 @@
         <button class="btn btn-info btn-sm btn-responsive right-round"
                 style="width:21%"
                 onclick="onKey('RIGHT');">
-          <span class="nx500-only">AF</span>
+          <span class="not-nx1-only">AF</span>
           <span class="glyphicon glyphicon-triangle-right"></span>
         </button>
       </div>
@@ -317,7 +321,7 @@
                 style="width:21%; margin-bottom: 2%; margin-left:3%; margin-right:3%"
                 onclick="onKey('DOWN');">
           <span class="glyphicon glyphicon-triangle-bottom"></span>
-          <span class="nx500-only">ISO</span></button>
+          <span class="not-nx1-only">ISO</span></button>
         </button>
         <button class="btn btn-primary btn-sm btn-responsive round"
                 style="width:20%; margin-top: 2%; margin-left:7%"

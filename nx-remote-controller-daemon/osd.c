@@ -160,7 +160,7 @@ static void update_osd_data(void)
             c = s_buffer[i++];
             s_osd_data.blocks[block_index]
                 .pixels[(y * s_osd_data.block_width * 4) + (x * 4) + 3] = c;
-            //s_osd_data.blocks[block_index].hash += c + x_offset + y_offset;
+            s_osd_data.blocks[block_index].hash += c + x_offset + y_offset;
         }
     }
 
@@ -244,13 +244,13 @@ static void *cap_osd_thread(void *data)
                 snprintf(command, sizeof(command),
                          "xwd -id %d | "
                          "%s convert -size 480x800+%d -depth 8 bgra:- "
-                         "-rotate 90 bgra:-",
+                         "-rotate 270 bgra:-",
                          window_id, get_chroot_command(), XWD_SKIP_BYTES);
             } else {
                 snprintf(command, sizeof(command),
                          "xwd -root | "
                          "%s convert -size 480x800+%d -depth 8 bgra:- "
-                         "-rotate 90 bgra:-",
+                         "-rotate 270 bgra:-",
                          get_chroot_command(), XWD_SKIP_BYTES);
             }
         }
