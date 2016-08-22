@@ -41,7 +41,6 @@ struct OsdData {
 static bool s_stopped;
 static unsigned char s_buffer[NX300_FRAME_WIDTH * FRAME_HEIGHT * 4 + 4096]; // 4096 for header
 static long long s_request_time;
-static int s_di_camera_app_window_id;
 static bool s_evf;
 static int s_buffer_shift_bytes;
 static struct OsdData s_osd_data;
@@ -90,24 +89,6 @@ static bool get_active_window_info(int *window_id,
     //print_log("window_id = %d, %dx%d+%d,%d", *window_id, *w, *h, *x, *y);
 
     return true;
-}
-
-static int get_di_camera_app_window_id(void)
-{
-    char command[256];
-    FILE *command_pipe;
-    char buf[32];
-    int window_id = -1;
-
-    snprintf(command, sizeof(command),
-             "%s xdotool search --class di-camera-app", get_chroot_command());
-    command_pipe = popen(command, "r");
-    if (fgets(buf, sizeof(buf), command_pipe) != NULL) {
-        window_id = atoi(buf);
-    }
-    pclose(command_pipe);
-
-    return window_id;
 }
 
 static void update_osd_data(void)
@@ -194,7 +175,7 @@ static void *cap_osd_thread(void *data)
 
     while (!s_stopped) {
         start_time = get_current_time();
-        if (s_request_time < start_time - 1000) {
+        if (s_request_time < start_time - 2000) {
             usleep(50*1000);
             continue;
         }
@@ -234,8 +215,8 @@ static void *cap_osd_thread(void *data)
             }
         } else if (is_nx500()) {
             if (w == 720 && h == 480 && lcd_get_state() == LCD_OFF) {
-                snprintf(command, sizeof(command), "xwd -id %d",
-                         s_di_camera_app_window_id);
+                snprintf(command, sizeof(command), "xwd -id %lu",
+                         get_di_camera_app_window_id());
             } else {
                 snprintf(command, sizeof(command), "xwd -root");
             }
@@ -313,9 +294,6 @@ void osd_init(void)
     pthread_mutex_init(&s_mutex, NULL);
 
     s_stopped = false;
-
-    s_di_camera_app_window_id = get_di_camera_app_window_id();
-    print_log("di-camera-app = %d", s_di_camera_app_window_id);
 
     if (pthread_create(&thread, NULL, cap_osd_thread, NULL)) {
         print_error("pthread_create() failed");

@@ -25,5 +25,6 @@
 
 extern void die(const char *msg);
 extern long long get_current_time(void);
+extern unsigned long get_di_camera_app_window_id(void);
 
 #endif

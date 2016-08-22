@@ -172,6 +172,9 @@ static void handle_input_api(struct mg_connection *nc,
         input_inject(command);
 
         send_200(nc);
+    } else if (mg_vcmp(func, "inject_keep_alive") == 0) {
+        input_inject_keep_alive();
+        send_200(nc);
     }
 }
 

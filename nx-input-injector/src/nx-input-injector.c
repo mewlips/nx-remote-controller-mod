@@ -9,6 +9,7 @@ int main(void)
     int button;
     int x;
     int y;
+    unsigned long window_id;
 
     xdo_t *xdo = xdo_new(":0");
 
@@ -26,7 +27,9 @@ int main(void)
                 xdo_move_mouse(xdo, x, y, 0);
             }
         } else if (strncmp(line, "key ", 4) == 0) {
-            if (sscanf(line + 4, "%s\n", key) == 1) {
+            if (sscanf(line + 4, "--window %lu %s\n", &window_id, key) == 2) {
+                xdo_send_keysequence_window(xdo, window_id, key, 0);
+            } else if (sscanf(line + 4, "%s\n", key) == 1) {
                 xdo_send_keysequence_window(xdo, CURRENTWINDOW, key, 0);
             }
         } else if (strncmp(line, "keyup ", 6) == 0) {

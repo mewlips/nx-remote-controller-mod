@@ -43,10 +43,8 @@ function getCameraInfo() {
             if (keepAliveTimer) {
                 clearInterval(keepAliveTimer);
             }
-            var keepAliveKey = isNx300() ? 'EV' : 'PWON';
-            onKey(keepAliveKey);
             keepAliveTimer = setInterval(function () {
-                onKey(keepAliveKey)
+                inputInjectKeepAlive();
             }, 25*1000);
         }
     });
@@ -111,8 +109,8 @@ function getCameraStatus() {
             $('#panel-content').html(html);
 
             if (status.hevc == 'on') {
-                setOsdTimeoutInterval(3000);
-                setLiveviewTimeoutInterval(3000);
+                setOsdTimeoutInterval(50);
+                setLiveviewTimeoutInterval(50);
             } else if (status.hevc == 'off') {
                 setOsdTimeoutInterval(50);
                 setLiveviewTimeoutInterval(50);

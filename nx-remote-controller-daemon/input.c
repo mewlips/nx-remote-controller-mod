@@ -72,9 +72,9 @@ static void *catch_inputs(void *data)
     pid_t xev_pid = 0;
 
     snprintf(command, sizeof(command),
-            "%s %s -p -id "
-            "\"$(%s xdotool search --class di-camera-app)\"",
-            get_chroot_command(), XEV_NX_COMMAND, get_chroot_command());
+            "%s %s -p -id %lu",
+            get_chroot_command(), XEV_NX_COMMAND,
+            get_di_camera_app_window_id());
     //print_log("xev-nx command = %s", command);
     xev_pipe = popen(command, "r");
     if (xev_pipe == NULL) {
@@ -161,6 +161,23 @@ void input_inject(const char *command)
         fprintf(s_inject_input_pipe, "%s\n", command);
         fflush(s_inject_input_pipe);
     }
+}
+
+void input_inject_keep_alive(void)
+{
+    char command[256];
+
+    if (is_new_nx_model()) {
+        snprintf(command, sizeof(command),
+                 "key --window %lu XF86AudioRaiseVolume", // PWON
+                 get_di_camera_app_window_id());
+    } else {
+        snprintf(command, sizeof(command),
+                 "key --window %lu XF86Reload", // EV
+                 get_di_camera_app_window_id());
+    }
+
+    input_inject(command);
 }
 
 void input_set_notify_socket(int client_socket)

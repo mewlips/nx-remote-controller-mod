@@ -124,6 +124,14 @@ function getKeyMapping(key) {
     return key;
 }
 
+function inputInjectKeepAlive() {
+    $.ajax({
+        url: '/api/v1/input/inject_keep_alive',
+        success: function(data) {
+        }
+    });
+}
+
 function onKey(key) {
     $.ajax({
         url: '/api/v1/input/inject?key=' + getKeyMapping(key),
