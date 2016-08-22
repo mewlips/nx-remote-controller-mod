@@ -16,7 +16,6 @@
 #define XEV_NX_COMMAND "xev-nx"
 
 static FILE *s_inject_input_pipe = NULL;
-static int s_notify_client_socket = -1;
 static bool s_stopped = false;
 
 static void process_mode(const char *key)
@@ -61,6 +60,8 @@ static void process_key(const char *line)
 {
     if (!strncmp(line, "keyup ", 6)) {
         process_mode(line + 6);
+    } else if (!strncmp(line, "keydown Help", 12)) {
+        systemf("%s/menu.sh", get_app_path());
     }
 }
 
@@ -92,13 +93,9 @@ static void *catch_inputs(void *data)
 
     while (!s_stopped) {
         if (fgets(buf, sizeof(buf), xev_pipe) != NULL) {
-            if (s_notify_client_socket != -1) {
-                if (write(s_notify_client_socket, buf, strlen(buf)) == -1) {
-                    print_error("write() failed!");
-                }
-            }
             buf[strlen(buf) - 1] = '\0';
             if (!strncmp(buf, "key", 3)) {
+                print_log("buf = %s", buf);
                 process_key(buf);
             }
         } else {
@@ -178,14 +175,4 @@ void input_inject_keep_alive(void)
     }
 
     input_inject(command);
-}
-
-void input_set_notify_socket(int client_socket)
-{
-    s_notify_client_socket = client_socket;
-}
-
-void input_remove_notify_socket(void)
-{
-    s_notify_client_socket = -1;
 }

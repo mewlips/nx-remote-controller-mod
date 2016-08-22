@@ -4,6 +4,8 @@ APP_PATH=/opt/usr/apps/nx-remote-controller-mod
 EXT_APP_PATH=$APP_PATH/externals
 POPUP_TIMEOUT=$EXT_APP_PATH/popup_timeout
 
+xmodmap -e "keycode 223 = Help"
+
 killall nx-input-injector
 killall xev-nx
 killall nx-remote-controller-daemon
