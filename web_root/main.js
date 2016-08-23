@@ -43,6 +43,7 @@ function getCameraInfo() {
             if (keepAliveTimer) {
                 clearInterval(keepAliveTimer);
             }
+            inputInjectKeepAlive();
             keepAliveTimer = setInterval(function () {
                 inputInjectKeepAlive();
             }, 25*1000);

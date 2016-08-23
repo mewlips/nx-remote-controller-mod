@@ -45,6 +45,7 @@ tar -C $TOOLS_PATH -xf $INSTALL_PATH/tools.tar
 mkdir -p $TOOLS_PATH/{sbin,/usr/sbin}
 chown root:root $TOOLS_PATH/bin/busybox
 chroot $TOOLS_PATH /bin/busybox --install -s
+mknode $TOOLS_PATH/dev/null c 1 3
 rm -fv $INSTALL_PATH/tools.tar
 cp -rv $INSTALL_PATH/* $APP_PATH
 mv $APP_PATH/EV_MOBILE.sh /opt/usr/nx-on-wake/

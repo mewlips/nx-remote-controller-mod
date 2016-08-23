@@ -1,7 +1,12 @@
 #!/bin/sh
 
+APP_PATH=/opt/usr/apps/nx-remote-controller-mod
+TOOLS_PATH=$APP_PATH/tools
+CHROOT="chroot $TOOLS_PATH"
+YAD="$CHROOT yad"
+
 #TODO: parse /etc/version?? directly
-NX_MODEL=$(externals/nx-model)
+NX_MODEL=$($APP_PATH/externals/nx-model)
 
 is_nx1_nx500() {
     [ "$NX_MODEL" = "nx500" ] || [ "$NX_MODEL" = "nx1" ] 
@@ -18,16 +23,11 @@ is_nx300() {
 if is_nx1_nx500; then
     #OPT_GEOMETRY="--geometry=720x480+0+0"
     OPT_GEOMETRY="--geometry=720x480"
+    NET_DEVICE="mlan0"
 else
     OPT_GEOMETRY="--geometry=800x480+0+0"
+    NET_DEVICE="wlan0"
 fi
-
-YAD="chroot tools yad $OPT_GEOMETRY --undecorated"
-
-ID_MOBILE=1
-ID_CLOSE=2
-
-KEY="12345"
 
 ABOUT_TEXT="\
 <small><small><b>NX Remote Controller Mod (ver. 0.8)</b>
@@ -45,58 +45,67 @@ ABOUT_TEXT="\
 res1=$(mktemp -t nx-remote.XXXXXXXX)
 res2=$(mktemp -t nx-remote.XXXXXXXX)
 
-get_infos() {
-    ip=TODO
-    wifi_ap=TODO
-}
+KEY="12345"
+IP_ADDRESS=$(ifconfig $NET_DEVICE | grep inet | sed -e 's/.*addr://' -e 's/ .*//')
+CONNECTED_AP=$(iwconfig $NET_DEVICE | grep ESSID | sed -e 's/.*://' -e 's/\"//g' -e 's/ .*//g')
 
-open_wifi_settings() {
-    /opt/usr/apps/nx-remote-controller-mod/externals/poker \
-        /tmp/var/run/memory/ap_setting/request_type 0x0:2900000001000000
-}
-
-send_original_wifi_key() {
-    local di_camera_app_wid=$(chroot tools xdotool search di-camera-app)
-    chroot tools xdotool key --window $di_camera_app_wid XF86Mail
+execute_from_fifo() {
+    local cmd
+    while true; do
+        cmd=$(cat $TOOLS_PATH/fifo)
+        echo run cmd = $cmd
+        $cmd
+    done
 }
 
 main_menu() {
     ipcrm -M "$KEY"
 
-    chroot tools yad --plug=$KEY --tabnum=1 \
-        --separator='\n' --quoted-output \
-        --form --field='Open Wi-Fi Settings:BTN' \
-        --form --field='Open Original Moblie:BTN' \
-        --form --field='IP Address' '192.168.0.252'
+    if [ ! -e $TOOLS_PATH/fifo ]; then
+        $CHROOT mkfifo /fifo
+    fi
 
-    chroot tools yad --plug=$KEY --tabnum=2 \
+    $YAD --plug=$KEY --tabnum=1 \
+        --separator='\n' --quoted-output \
+        --form --field='IP Address:' "$IP_ADDRESS" \
+        --form --field='Connected AP:' "$CONNECTED_AP" \
+        --form --field='Open Wi-Fi Settings:FBTN' "sh -c \"echo $APP_PATH/wifi.sh > /fifo\"" \
+        --form --field='Open Original Mobile App:FBTN' "sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" &
+
+    $YAD --plug=$KEY --tabnum=2 \
          --separator='\n' --quoted-output \
          --text='Camera Hacks' --text-align=center \
-         --form --field="Shutter::cb" "Silent!^Normal" \
+         --form --field="Shutter::cb" "$($APP_PATH/shutter.sh get)" \
          --form --field="LCD::cb" "On!Off!Video" > $res1 &
 
-    chroot tools yad --plug=$KEY --tabnum=3 \
+    $YAD --plug=$KEY --tabnum=3 \
          --text="$ABOUT_TEXT" > $res2 &
 
-    settings=$($YAD --notebook --key=$KEY --tab="Main" --tab="Hacks" --tab="About" \
-                    --button="Orig. Mobile:$ID_MOBILE" \
-                    --button=Close:"$ID_CLOSE" --buttons-layout=end)
+    settings=$($YAD --undecorated --notebook --key=$KEY --tab="Main" --tab="Hacks" --tab="About")
 }
 
+killall yad
+execute_from_fifo &
 main_menu
 result=$?
 
-eval TAB1=($(< $res1))
-eval TAB2=($(< $res2))
+#eval TAB1="$(< $res1)"
+#eval TAB2="$(< $res2)"
 
-echo ${TAB1[@]}
+#echo ${TAB1[@]}
+cat $res1
+cat $res2
+
+rm -f $res1 $res2
 
 case $result in
-    $ID_CLOSE) # Close
+    0) # OK
         ;;
-    $ID_MOBILE)
-        send_original_wifi_key
+    1) # Cancel
         ;;
     *)
         ;;
 esac
+
+killall yad
+killall menu.sh
