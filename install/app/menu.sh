@@ -1,5 +1,6 @@
 #!/bin/sh
 
+#TODO: parse /etc/version?? directly
 NX_MODEL=$(externals/nx-model)
 
 is_nx1_nx500() {
@@ -44,19 +45,40 @@ ABOUT_TEXT="\
 res1=$(mktemp -t nx-remote.XXXXXXXX)
 res2=$(mktemp -t nx-remote.XXXXXXXX)
 
+get_infos() {
+    ip=TODO
+    wifi_ap=TODO
+}
+
+open_wifi_settings() {
+    /opt/usr/apps/nx-remote-controller-mod/externals/poker \
+        /tmp/var/run/memory/ap_setting/request_type 0x0:2900000001000000
+}
+
+send_original_wifi_key() {
+    local di_camera_app_wid=$(chroot tools xdotool search di-camera-app)
+    chroot tools xdotool key --window $di_camera_app_wid XF86Mail
+}
+
 main_menu() {
     ipcrm -M "$KEY"
 
     chroot tools yad --plug=$KEY --tabnum=1 \
+        --separator='\n' --quoted-output \
+        --form --field='Open Wi-Fi Settings:BTN' \
+        --form --field='Open Original Moblie:BTN' \
+        --form --field='IP Address' '192.168.0.252'
+
+    chroot tools yad --plug=$KEY --tabnum=2 \
          --separator='\n' --quoted-output \
          --text='Camera Hacks' --text-align=center \
          --form --field="Shutter::cb" "Silent!^Normal" \
          --form --field="LCD::cb" "On!Off!Video" > $res1 &
 
-    chroot tools yad --plug=$KEY --tabnum=2 \
+    chroot tools yad --plug=$KEY --tabnum=3 \
          --text="$ABOUT_TEXT" > $res2 &
 
-    settings=$($YAD --notebook --key=$KEY --tab="Hacks" --tab=About \
+    settings=$($YAD --notebook --key=$KEY --tab="Main" --tab="Hacks" --tab="About" \
                     --button="Orig. Mobile:$ID_MOBILE" \
                     --button=Close:"$ID_CLOSE" --buttons-layout=end)
 }
@@ -73,9 +95,7 @@ case $result in
     $ID_CLOSE) # Close
         ;;
     $ID_MOBILE)
-        di_camera_app_wid=$(chroot tools xdotool search di-camera-app)
-        chroot tools xdotool key --window $di_camera_app_wid XF86Mail
-        #echo "TODO: launch original mobile func"
+        send_original_wifi_key
         ;;
     *)
         ;;
