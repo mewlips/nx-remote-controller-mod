@@ -1,8 +1,6 @@
 #!/bin/bash
 
 APP_PATH=/opt/usr/apps/nx-remote-controller-mod
-EXT_APP_PATH=$APP_PATH/externals
-POPUP_TIMEOUT=$EXT_APP_PATH/popup_timeout
 
 xmodmap -e "keycode 223 = Help"
 
@@ -16,7 +14,5 @@ if [ "$1" == "debug" ]; then
 else
     nice --adjustment=19 $APP_PATH/nx-remote-controller-daemon &> /dev/null &
 fi
-
-$POPUP_TIMEOUT " [ nx-remote-controller-mod ] " 2 &
 
 exit 0;

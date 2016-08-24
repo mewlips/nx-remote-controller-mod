@@ -16,6 +16,7 @@ int main(int argc, char **argv)
     signal(SIGCHLD, SIG_IGN);
 
     nx_model_init();
+    input_init();
 
     while (true) {
         ip_addr = network_get_wifi_ip_address();
@@ -26,7 +27,6 @@ int main(int argc, char **argv)
 
         liveview_init();
         osd_init();
-        input_init();
         network_init();
 
         network_broadcast_discovery_packet(PORT_UDP_BROADCAST);
@@ -36,12 +36,13 @@ int main(int argc, char **argv)
 
         liveview_destroy();
         osd_destroy();
-        input_destroy();
         network_destroy();
 
         // wait for threads terimantion
         sleep(3);
     }
+
+    input_destroy();
 
     return 0;
 }

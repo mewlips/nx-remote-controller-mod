@@ -71,6 +71,7 @@ main_menu() {
         --form --field='Connected AP:' "$CONNECTED_AP" \
         --form --field='Open Wi-Fi Settings:FBTN' "sh -c \"echo $APP_PATH/wifi.sh > /fifo\"" \
         --form --field='Open Original Mobile App:FBTN' "sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" &
+        --form --field='Uninstall:FBTN' "sh -c \"echo $APP_PATH/uninstall.sh > /fifo\"" &
 
     $YAD --plug=$KEY --tabnum=2 \
          --separator='\n' --quoted-output \
