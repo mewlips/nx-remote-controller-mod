@@ -37,17 +37,23 @@ void run_command(char *command_line)
 const char *get_app_path(void)
 {
     ssize_t bytes;
+    const char *app_path;
 
     if (s_app_path[0] != '\0') {
         return s_app_path;
     }
 
-    bytes = readlink("/proc/self/cwd", s_app_path, sizeof(s_app_path) - 1);
-    if (bytes == -1) {
-        print_error("readlink() failed.");
-        return NULL;
+    app_path = getenv("APP_PATH");
+    if (app_path == NULL) {
+        bytes = readlink("/proc/self/cwd", s_app_path, sizeof(s_app_path) - 1);
+        if (bytes == -1) {
+            print_error("readlink() failed.");
+            return NULL;
+        }
+        s_app_path[bytes] = '\0';
+    } else {
+        snprintf(s_app_path, sizeof(s_app_path), "%s", app_path);
     }
-    s_app_path[bytes] = '\0';
 
     return s_app_path;
 }

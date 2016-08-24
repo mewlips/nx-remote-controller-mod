@@ -51,6 +51,11 @@ CONNECTED_AP=$(iwconfig $NET_DEVICE | grep ESSID | sed -e 's/.*://' -e 's/\"//g'
 
 execute_from_fifo() {
     local cmd
+
+    if [ ! -e $TOOLS_PATH/fifo ]; then
+        $CHROOT mkfifo /fifo
+    fi
+
     while true; do
         cmd=$(cat $TOOLS_PATH/fifo)
         echo run cmd = $cmd
@@ -61,16 +66,12 @@ execute_from_fifo() {
 main_menu() {
     ipcrm -M "$KEY"
 
-    if [ ! -e $TOOLS_PATH/fifo ]; then
-        $CHROOT mkfifo /fifo
-    fi
-
     $YAD --plug=$KEY --tabnum=1 \
         --separator='\n' --quoted-output \
         --form --field='IP Address:' "$IP_ADDRESS" \
         --form --field='Connected AP:' "$CONNECTED_AP" \
         --form --field='Open Wi-Fi Settings:FBTN' "sh -c \"echo $APP_PATH/wifi.sh > /fifo\"" \
-        --form --field='Open Original Mobile App:FBTN' "sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" &
+        --form --field='Open Original Mobile App:FBTN' "sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" \
         --form --field='Uninstall:FBTN' "sh -c \"echo $APP_PATH/uninstall.sh > /fifo\"" &
 
     $YAD --plug=$KEY --tabnum=2 \
@@ -108,5 +109,6 @@ case $result in
         ;;
 esac
 
+killall cat
 killall yad
 killall menu.sh

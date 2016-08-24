@@ -1,6 +1,8 @@
 #!/bin/bash
 
-APP_PATH=/opt/usr/apps/nx-remote-controller-mod
+export APP_PATH=/opt/usr/apps/nx-remote-controller-mod
+export HOME=/root
+export USER=root
 
 xmodmap -e "keycode 223 = Help"
 

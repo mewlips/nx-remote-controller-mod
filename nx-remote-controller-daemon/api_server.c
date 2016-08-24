@@ -242,12 +242,15 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p)
 
 void api_server_run(void)
 {
+    char web_root[256];
     struct mg_mgr mgr;
     struct mg_connection *nc;
 
+    snprintf(web_root, sizeof(web_root), "%s/web_root", get_app_path());
+
     mg_mgr_init(&mgr, NULL);
 
-    s_http_server_opts.document_root = "web_root";
+    s_http_server_opts.document_root = web_root;
     s_http_server_opts.enable_directory_listing = "yes";
 
     nc = mg_bind(&mgr, s_http_port, ev_handler);
