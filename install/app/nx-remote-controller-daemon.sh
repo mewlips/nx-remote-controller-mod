@@ -9,8 +9,10 @@ xmodmap -e "keycode 223 = Help"
 killall nx-input-injector
 killall xev-nx
 killall nx-remote-controller-daemon
+killall execute.sh
 
 $APP_PATH/lcd_control.sh on
+$APP_PATH/execute.sh &
 if [ "$1" == "debug" ]; then
     nice --adjustment=19 $APP_PATH/nx-remote-controller-daemon
 else

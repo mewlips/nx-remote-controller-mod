@@ -42,52 +42,48 @@ ABOUT_TEXT="\
 
 <i>License:</i> GPL-3</small></small>"
 
-res1=$(mktemp -t nx-remote.XXXXXXXX)
-res2=$(mktemp -t nx-remote.XXXXXXXX)
+get_network_info() {
+    IP_ADDRESS=$(ifconfig $NET_DEVICE | grep inet | sed -e 's/.*addr://' -e 's/ .*//')
+    CONNECTED_AP=$(iwconfig $NET_DEVICE | grep ESSID | sed -e 's/.*://' -e 's/\"//g' -e 's/ .*//g')
+}
 
-KEY="12345"
-IP_ADDRESS=$(ifconfig $NET_DEVICE | grep inet | sed -e 's/.*addr://' -e 's/ .*//')
-CONNECTED_AP=$(iwconfig $NET_DEVICE | grep ESSID | sed -e 's/.*://' -e 's/\"//g' -e 's/ .*//g')
-
-execute_from_fifo() {
-    local cmd
-
-    if [ ! -e $TOOLS_PATH/fifo ]; then
-        $CHROOT mkfifo /fifo
-    fi
-
+run_wifi_settings() {
+    $APP_PATH/externals/poker \
+        /tmp/var/run/memory/ap_setting/request_type 0x0:2900000001000000
+    sleep 2
     while true; do
-        cmd=$(cat $TOOLS_PATH/fifo)
-        echo run cmd = $cmd
-        $cmd
+        if [ "ap-setting-app" != "$(chroot tools xdotool getactivewindow getwindowname)" ]; then
+            break;
+        fi
+        echo ap-setting-app
+        sleep 1
     done
 }
 
 main_menu() {
-    ipcrm -M "$KEY"
-
-    $YAD --plug=$KEY --tabnum=1 \
-        --separator='\n' --quoted-output \
-        --form --field='IP Address:' "$IP_ADDRESS" \
-        --form --field='Connected AP:' "$CONNECTED_AP" \
-        --form --field='Open Wi-Fi Settings:FBTN' "sh -c \"echo $APP_PATH/wifi.sh > /fifo\"" \
-        --form --field='Open Original Mobile App:FBTN' "sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" \
-        --form --field='Uninstall:FBTN' "sh -c \"echo $APP_PATH/uninstall.sh > /fifo\"" &
-
-    $YAD --plug=$KEY --tabnum=2 \
-         --separator='\n' --quoted-output \
-         --text='Camera Hacks' --text-align=center \
-         --form --field="Shutter::cb" "$($APP_PATH/shutter.sh get)" \
-         --form --field="LCD::cb" "On!Off!Video" > $res1 &
-
-    $YAD --plug=$KEY --tabnum=3 \
-         --text="$ABOUT_TEXT" > $res2 &
-
-    settings=$($YAD --undecorated --notebook --key=$KEY --tab="Main" --tab="Hacks" --tab="About")
+    settings=$($YAD \
+        --undecorated --separator='\n' --quoted-output --scroll --columns=2 \
+        --form --field='IP Addr:RO' "$IP_ADDRESS" \
+        --form --field='WiFi AP:RO' "$CONNECTED_AP" \
+        --form --field="Shutter:cb" "$($APP_PATH/shutter.sh get)" \
+        --form --field="LCD:cb" "On!Off!Video" \
+        --form --field='Wi-Fi Settings:FBTN' "sh -c \"echo $APP_PATH/wifi.sh > /fifo\"" \
+        --form --field='Stock Mobile:FBTN' "sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" \
+        --form --field='Uninstall:FBTN' "sh -c \"echo $APP_PATH/uninstall.sh > /fifo\"" \
+        --form --field='Telnetd:FBTN' "sh -c \"echo $APP_PATH/telnetd.sh > /fifo\"" \
+        ) \
+#         --text="$ABOUT_TEXT" > $res2 &
+#    settings=$($YAD --undecorated --notebook --key=$KEY --tab="Main" --tab="Hacks" --tab="About")
 }
 
 killall yad
-execute_from_fifo &
+
+get_network_info
+if [ "$IP_ADDRESS" == "" ]; then
+    run_wifi_settings
+    sleep 1
+    get_network_info
+fi
 main_menu
 result=$?
 
@@ -95,10 +91,7 @@ result=$?
 #eval TAB2="$(< $res2)"
 
 #echo ${TAB1[@]}
-cat $res1
-cat $res2
-
-rm -f $res1 $res2
+echo settings = $settings
 
 case $result in
     0) # OK
