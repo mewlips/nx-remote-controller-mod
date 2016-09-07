@@ -1,10 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
 APP_PATH=/opt/usr/apps/nx-remote-controller-mod
 TOOLS_PATH=$APP_PATH/tools
 CHROOT="chroot $TOOLS_PATH"
 YAD="$CHROOT yad"
 
+# turn on lcd
+$APP_PATH/lcd_control.sh on
+
+#TODO: keep alive camera
 #TODO: parse /etc/version?? directly
 NX_MODEL=$($APP_PATH/externals/nx-model)
 
@@ -29,18 +33,14 @@ else
     NET_DEVICE="wlan0"
 fi
 
-ABOUT_TEXT="\
-<small><small><b>NX Remote Controller Mod (ver. 0.8)</b>
+TITLE="<b><span color='blue'>NX Remote Controller Mod (ver. 0.8)</span></b>"
 
-<i>Project Homepage:</i>
-<small><span color='blue'>https://mewlips.github.io/nx-remote-controller-mod</span></small>
-
-<i>GitHub:</i>
-<small><span color='blue'>https://github.com/mewlips/nx-remote-controller-mod</span></small>
-
-<i>Copyright:</i> Mewlips &lt;mewlips@gmail.com&gt;
-
-<i>License:</i> GPL-3</small></small>"
+howto() {
+    echo "\
+Connect your PC or mobile device to the
+  same Wi-Fi network with this camera.
+Open http://$IP_ADDRESS in web browser."
+}
 
 get_network_info() {
     IP_ADDRESS=$(ifconfig $NET_DEVICE | grep inet | sed -e 's/.*addr://' -e 's/ .*//')
@@ -61,19 +61,23 @@ run_wifi_settings() {
 }
 
 main_menu() {
+#        --undecorated --separator='\n' --quoted-output --scroll
     settings=$($YAD \
-        --undecorated --separator='\n' --quoted-output --scroll --columns=2 \
-        --form --field='IP Addr:RO' "$IP_ADDRESS" \
-        --form --field='WiFi AP:RO' "$CONNECTED_AP" \
-        --form --field="Shutter:cb" "$($APP_PATH/shutter.sh get)" \
-        --form --field="LCD:cb" "On!Off!Video" \
-        --form --field='Wi-Fi Settings:FBTN' "sh -c \"echo $APP_PATH/wifi.sh > /fifo\"" \
-        --form --field='Stock Mobile:FBTN' "sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" \
-        --form --field='Uninstall:FBTN' "sh -c \"echo $APP_PATH/uninstall.sh > /fifo\"" \
-        --form --field='Telnetd:FBTN' "sh -c \"echo $APP_PATH/telnetd.sh > /fifo\"" \
-        ) \
-#         --text="$ABOUT_TEXT" > $res2 &
-#    settings=$($YAD --undecorated --notebook --key=$KEY --tab="Main" --tab="Hacks" --tab="About")
+        --undecorated --scroll \
+        --form --field='IP Address:RO' "$IP_ADDRESS" \
+        --form --field='Connected Wi-Fi AP:RO' "$CONNECTED_AP" \
+        --form --field=":LBL" "" \
+        --form --field="Shutter Type:cb" "$($APP_PATH/shutter.sh get)" \
+        --form --field="LCD Control:cb" "on!off!video" \
+        --form --field="$HOWTO_0:LBL" "" \
+        --form --field="Usage:TXT" "$(howto)" \
+        --button="About:sh -c \"echo $APP_PATH/about.sh > /fifo\"" \
+        --button="Mobile:sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" \
+        --button="WiFi:sh -c \"echo $APP_PATH/wifi.sh > /fifo\"" \
+        --button=gtk-cancel:1 \
+        --button=gtk-ok:0 \
+        --text="$TITLE" \
+        )
 }
 
 killall yad
@@ -81,20 +85,23 @@ killall yad
 get_network_info
 if [ "$IP_ADDRESS" == "" ]; then
     run_wifi_settings
-    sleep 1
-    get_network_info
+    for i in $(seq 10); do
+        sleep 1
+        get_network_info
+        if [ "$IP_ADDRESS" != "" ]; then
+            break
+        fi
+    done
 fi
 main_menu
 result=$?
 
-#eval TAB1="$(< $res1)"
-#eval TAB2="$(< $res2)"
-
-#echo ${TAB1[@]}
-echo settings = $settings
-
 case $result in
     0) # OK
+        shutter=$(echo "$settings" | cut -d'|' -f 4)
+        lcd=$(echo "$settings" | cut -d'|' -f 5)
+        $APP_PATH/shutter.sh $shutter
+        $APP_PATH/lcd_control.sh $lcd
         ;;
     1) # Cancel
         ;;
