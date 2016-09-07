@@ -17,6 +17,8 @@ function onOsdMouseDown() {
             pageX = ev.originalEvent.touches[0].pageX;
             pageY = ev.originalEvent.touches[0].pageY;
         }
+        var cvs = document.getElementById("osd");
+        osdScale = cvs.width / $('#cameraScreen').width();
         var x = Math.floor((pageX - parentOffset.left) * osdScale);
         var y = Math.floor((pageY - parentOffset.top) * osdScale);
         mouseDowned = true;
@@ -145,7 +147,6 @@ function getOsd() {
 
             if (cvs.width != frameWidth) {
                 cvs.width = frameWidth;
-                osdScale = frameWidth / $('#cameraScreen').width();
             }
             if (cvs.height != frameHeight) {
                 cvs.height = frameHeight;
