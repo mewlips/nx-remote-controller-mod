@@ -19,4 +19,11 @@ else
     nice --adjustment=19 $APP_PATH/nx-remote-controller-daemon &> /dev/null &
 fi
 
+for i in $(seq 1 3 7); do
+    echo 1 > /sys/devices/platform/leds-gpio/leds/card/brightness
+    sleep 0.$i
+    echo 0 > /sys/devices/platform/leds-gpio/leds/card/brightness
+    sleep 0.$i
+done
+
 exit 0;

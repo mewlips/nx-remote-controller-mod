@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 APP_PATH=/opt/usr/apps/nx-remote-controller-mod
 TOOLS_PATH=$APP_PATH/tools
@@ -9,6 +9,8 @@ if [ ! -e $FIFO_PATH ]; then
     $CHROOT mkfifo /fifo
 fi
 
+di_camera_app_wid=$($CHROOT xdotool search --class di-camera-app)
+
 while true; do
     cmd=$(cat $FIFO_PATH)
     echo > $FIFO_PATH
@@ -16,7 +18,12 @@ while true; do
         echo execute command : $cmd
         $cmd
     else
+        if [ "$($CHROOT xdotool getactivewindow getwindowname)" == "YAD" ]; then
+            $CHROOT xdotool key --window $di_camera_app_wid XF86AudioRaiseVolume # keep alive 
+            xmodmap -e "keycode 133 = Escape"
+        else 
+            xmodmap -e "keycode 133 = Super_L"
+        fi
         sleep 1
     fi
 done
-

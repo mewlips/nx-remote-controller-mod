@@ -9,11 +9,11 @@ YAD="$CHROOT yad"
 $APP_PATH/lcd_control.sh on
 
 #TODO: keep alive camera
-#TODO: parse /etc/version?? directly
-NX_MODEL=$($APP_PATH/externals/nx-model)
+NX_MODEL=$(cat /etc/version.info | head -n 2 | tail -n 1)
+echo $NX_MODEL
 
 is_nx1_nx500() {
-    [ "$NX_MODEL" = "nx500" ] || [ "$NX_MODEL" = "nx1" ] 
+    [ "$NX_MODEL" == "NX500" ] || [ "$NX_MODEL" == "NX1" ] 
 }
 
 is_nx300() {
@@ -33,7 +33,8 @@ else
     NET_DEVICE="wlan0"
 fi
 
-TITLE="<b><span color='blue'>NX Remote Controller Mod (ver. 0.8)</span></b>"
+TITLE="<b><span fgcolor='yellow' bgcolor='#1010ff'>\
+       NX Remote Controller Mod (v0.8)       </span></b>"
 
 howto() {
     echo "\
@@ -52,7 +53,7 @@ run_wifi_settings() {
         /tmp/var/run/memory/ap_setting/request_type 0x0:2900000001000000
     sleep 2
     while true; do
-        if [ "ap-setting-app" != "$(chroot tools xdotool getactivewindow getwindowname)" ]; then
+        if [ "ap-setting-app" != "$($CHROOT xdotool getactivewindow getwindowname)" ]; then
             break;
         fi
         echo ap-setting-app
@@ -61,15 +62,16 @@ run_wifi_settings() {
 }
 
 main_menu() {
-#        --undecorated --separator='\n' --quoted-output --scroll
+    SPAN="<span color='blue'><i>"
+    CSPAN="</i></span>"
     settings=$($YAD \
         --undecorated --scroll \
-        --form --field='IP Address:RO' "$IP_ADDRESS" \
-        --form --field='Connected Wi-Fi AP:RO' "$CONNECTED_AP" \
+        --form --field="${SPAN}IP Address${CSPAN}:RO" "$IP_ADDRESS" \
+        --form --field="${SPAN}Connected Wi-Fi AP${CSPAN}:RO" "$CONNECTED_AP" \
         --form --field=":LBL" "" \
-        --form --field="Shutter Type:cb" "$($APP_PATH/shutter.sh get)" \
-        --form --field="LCD Control:cb" "on!off!video" \
-        --form --field="$HOWTO_0:LBL" "" \
+        --form --field="${SPAN}Shutter Type${CSPAN}:cb" "$($APP_PATH/shutter.sh get)" \
+        --form --field="${SPAN}LCD Control${CSPAN}:cb" "on!off!video" \
+        --form --field=":LBL" "" \
         --form --field="Usage:TXT" "$(howto)" \
         --button="About:sh -c \"echo $APP_PATH/about.sh > /fifo\"" \
         --button="Mobile:sh -c \"echo $APP_PATH/mobile.sh > /fifo\"" \
@@ -96,19 +98,24 @@ fi
 main_menu
 result=$?
 
+lcd_off_info() {
+    $CHROOT yad --timeout=5 --timeout-indicator=left \
+     --text="<big>To turn on the LCD again, \npush the 'MOBILE' button.</big>" \
+     --button=gtk-ok --center --width=600
+}
+
 case $result in
     0) # OK
         shutter=$(echo "$settings" | cut -d'|' -f 4)
         lcd=$(echo "$settings" | cut -d'|' -f 5)
         $APP_PATH/shutter.sh $shutter
-        $APP_PATH/lcd_control.sh $lcd
+        if [ "$lcd" != "on" ]; then
+            lcd_off_info
+            $APP_PATH/lcd_control.sh $lcd
+        fi
         ;;
     1) # Cancel
         ;;
     *)
         ;;
 esac
-
-killall cat
-killall yad
-killall menu.sh
