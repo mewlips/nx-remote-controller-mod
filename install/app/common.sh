@@ -1,40 +1,30 @@
 #!/bin/bash
 
 APP_PATH=/opt/usr/apps/nx-remote-controller-mod
-EXT_APP_PATH=$APP_PATH/externals
+TOOLS_PATH=$APP_PATH/tools
+CHROOT="chroot $TOOLS_PATH"
+YAD="$CHROOT yad"
+XDOTOOL="$CHROOT xdotool"
+XEV_NX="$CHROOT xev-nx"
 
-MOD_GUI=$EXT_APP_PATH/mod_gui
-POPUP_TIMEOUT=$EXT_APP_PATH/popup_timeout
-POPUP_OK=$EXT_APP_PATH/popup_ok
-
-kill_msg() {
-    killall popup_timeout
+NX_MODEL=$(cat /etc/version.info | head -n 2 | tail -n 1)
+is_nx1() {
+    [ "$NX_MODEL" == "NX1" ] 
+}
+is_nx500() {
+    [ "$NX_MODEL" == "NX500" ]
+}
+is_nx1_nx500() {
+    is_nx1 || is_nx500
+}
+is_nx300() {
+    if is_nx1_nx500; then
+        false
+    else
+        true
+    fi
 }
 
-show_msg() {
-    kill_msg
-    $POPUP_TIMEOUT "$@" 100 &
-}
+TITLE="<b><span fgcolor='yellow' bgcolor='#1010ff'>\
+       NX Remote Controller Mod (v0.8)       </span></b>"
 
-show_msg_timeout() {
-    timeout=$1
-    shift
-    $POPUP_TIMEOUT "$@" $timeout
-}
-
-return_menu() {
-    $MOD_GUI $APP_PATH/main
-    exit 0;
-}
-
-popup_back_or_close() {
-    $POPUP_OK "$@" "BACK" "CLOSE" && return_menu
-}
-
-get_msg() {
-    IFS=$'\n'
-    for line in $1; do
-        echo $line'<br>'
-    done
-    IFS=
-}

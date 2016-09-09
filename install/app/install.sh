@@ -6,55 +6,47 @@ APP_PATH=/opt/usr/apps/nx-remote-controller-mod
 TOOLS_PATH=$APP_PATH/tools
 NX_PATCH_PATH=/opt/usr/nx-on-wake
 
-eval $($INSTALL_PATH/model.sh)
-
 # ========= check model and fw version =========
+
+MODEL=$(cat /etc/version.info | head -n 2 | tail -n 1)
+FWVER=$(cat /etc/version.info | head -n 1)
+
 if [ "$MODEL" == "NX500" ]; then
     if [ "$FWVER" != "1.12" ]; then
-        #YAD --text="NX500 firmware version <b>1.12</b> is required."
         echo "NX500 firmware version 1.12 is required."
-        exit
+        exit 1
     fi
 elif [ "$MODEL" == "NX1" ]; then
     if [ "$FWVER" != "1.41" ]; then
-        #YAD --text="NX1 firmware version <b>1.41</b> is required."
         echo "NX1 firmware version 1.41 is required."
-        exit
+        exit 1
     fi
 elif [ "$MODEL" != "NX300" ]; then
-    #YAD --text="$MODEL is not supported."
     echo "$MODEL is not supported."
-    exit
+    exit 1
 fi
 
 if [ -d $APP_PATH ]; then
     echo "=== Removing old version... ==="
-    rm -rfv $APP_PATH
+    rm -rfv $APP_PATH || exit 1
 fi
 
 echo "=== Installing files... ==="
-mkdir -pv $TOOLS_PATH
-tar -C $TOOLS_PATH -xvf $INSTALL_PATH/tools.tar
-mkdir -pv $TOOLS_PATH/{dev,sbin,usr/sbin}
-chown root:root $TOOLS_PATH/bin/busybox
-chroot $TOOLS_PATH /bin/busybox --install -s
-mknod $TOOLS_PATH/dev/null c 1 3
-rm -fv $INSTALL_PATH/tools.tar
-cp -rv $INSTALL_PATH/* $APP_PATH
-mv -fv $APP_PATH/EV_MOBILE.sh $NX_PATCH_PATH
-ln -sv $APP_PATH/nx-remote-controller-daemon.sh $NX_PATCH_PATH/auto/
+mkdir -pv $TOOLS_PATH || exit 1
+tar -C $TOOLS_PATH -xvf $INSTALL_PATH/tools.tar || exit 1
+mkdir -pv $TOOLS_PATH/{dev,sbin,usr/sbin} || exit 1
+chown root:root $TOOLS_PATH/bin/busybox || exit 1
+chroot $TOOLS_PATH /bin/busybox --install -s || exit 1
+mknod $TOOLS_PATH/dev/null c 1 3 || exit 1
+rm -fv $INSTALL_PATH/tools.tar || exit 1
+cp -rv $INSTALL_PATH/* $APP_PATH || exit 1
+ln -sfv $APP_PATH/nx-remote-controller-daemon.sh $NX_PATCH_PATH/auto/ || exit 1
 
 echo "=== Cleaning up files... ==="
-rm -rfv $INSTALL_PATH
-rm -fv $APP_PATH/install.sh
-rm -fv $ON_WAKE
+rm -rfv $INSTALL_PATH || exit 1
+rm -fv $APP_PATH/install.sh || exit 1
+rm -fv $ON_WAKE || exit 1
 
 sync; sync; sync;
-echo "=== Installation completed! ==="
-echo "Usage:"
-echo "  Press the 'Mobile' button to run"
-echo "    the menu of 'NX Remote Controller Mod'."
-echo "  Long press the 'Mobile' button to run"
-echo "    original mobile function."
-echo
-echo "Press 'OK' Button to continue."
+
+exit 0

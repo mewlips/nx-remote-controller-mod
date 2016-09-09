@@ -1,40 +1,17 @@
 #!/bin/bash
 
-APP_PATH=/opt/usr/apps/nx-remote-controller-mod
-TOOLS_PATH=$APP_PATH/tools
-CHROOT="chroot $TOOLS_PATH"
-YAD="$CHROOT yad"
+source /opt/usr/apps/nx-remote-controller-mod/common.sh
 
 # turn on lcd
 $APP_PATH/lcd_control.sh on
 
-#TODO: keep alive camera
-NX_MODEL=$(cat /etc/version.info | head -n 2 | tail -n 1)
-echo $NX_MODEL
-
-is_nx1_nx500() {
-    [ "$NX_MODEL" == "NX500" ] || [ "$NX_MODEL" == "NX1" ] 
-}
-
-is_nx300() {
-    if is_nx1_nx500; then
-        false
-    else
-        true
-    fi
-}
-
 if is_nx1_nx500; then
-    #OPT_GEOMETRY="--geometry=720x480+0+0"
     OPT_GEOMETRY="--geometry=720x480"
     NET_DEVICE="mlan0"
 else
     OPT_GEOMETRY="--geometry=800x480+0+0"
     NET_DEVICE="wlan0"
 fi
-
-TITLE="<b><span fgcolor='yellow' bgcolor='#1010ff'>\
-       NX Remote Controller Mod (v0.8)       </span></b>"
 
 howto() {
     echo "\
@@ -53,7 +30,7 @@ run_wifi_settings() {
         /tmp/var/run/memory/ap_setting/request_type 0x0:2900000001000000
     sleep 2
     while true; do
-        if [ "ap-setting-app" != "$($CHROOT xdotool getactivewindow getwindowname)" ]; then
+        if [ "ap-setting-app" != "$($XDOTOOL getactivewindow getwindowname)" ]; then
             break;
         fi
         echo ap-setting-app
@@ -99,8 +76,14 @@ main_menu
 result=$?
 
 lcd_off_info() {
-    $CHROOT yad --timeout=5 --timeout-indicator=left \
+    $YAD --timeout=5 --timeout-indicator=left \
      --text="<big>To turn on the LCD again, \npush the 'MOBILE' button.</big>" \
+     --button=gtk-ok --center --width=600
+}
+
+osd_off_info() {
+    $YAD --timeout=5 --timeout-indicator=left \
+     --text="<big>To turn on the OSD again, \npush the 'MOBILE' button.</big>" \
      --button=gtk-ok --center --width=600
 }
 
@@ -109,9 +92,12 @@ case $result in
         shutter=$(echo "$settings" | cut -d'|' -f 4)
         lcd=$(echo "$settings" | cut -d'|' -f 5)
         $APP_PATH/shutter.sh $shutter
-        if [ "$lcd" != "on" ]; then
-            lcd_off_info
+        if [ "$lcd" == "off" ]; then
             $APP_PATH/lcd_control.sh $lcd
+            lcd_off_info
+        elif [ "$lcd" == "video" ]; then
+            $APP_PATH/lcd_control.sh $lcd
+            osd_off_info
         fi
         ;;
     1) # Cancel

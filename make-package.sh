@@ -12,11 +12,8 @@ rm -fv $ZIP_FILE
 rm -fv $SD_ZIP_FILE
 
 mkdir -pv $EXTERNALS
-cp -fv $NX500_NX1_MODDING/mod_gui/mod_gui $EXTERNALS/
-cp -fv $NX500_NX1_MODDING/nx-model/nx-model $EXTERNALS/
 cp -fv $NX500_NX1_MODDING/poker $EXTERNALS/
-cp -fv $NX500_NX1_MODDING/popup_ok $EXTERNALS/
-cp -fv $NX500_NX1_MODDING/popup_timeout $EXTERNALS/
+cp -fv $NX500_NX1_MODDING/telnetd $EXTERNALS/
 
 mkdir -pv $INSTALL_WEB_ROOT $SD_INSTALL_WEB_ROOT
 cp -fv web_root/*.{js,html} $INSTALL_WEB_ROOT/

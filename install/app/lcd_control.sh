@@ -1,7 +1,8 @@
 #!/bin/sh
 
-TOOLS_PATH=/opt/usr/apps/nx-remote-controller-mod/tools
-windowid=$(chroot $TOOLS_PATH xdotool search --class di-camera-app)
+source /opt/usr/apps/nx-remote-controller-mod/common.sh
+
+windowid=$($XDOTOOL search --class di-camera-app)
 
 xev_nx_pid="$(ps ax | grep "xev-nx -.. -bi" | grep -v grep | awk '{print $1}')"
 if [ "$xev_nx_pid" != "" ]; then
@@ -9,13 +10,13 @@ if [ "$xev_nx_pid" != "" ]; then
 fi
 
 if [ "$1" == "on" ]; then
-    chroot $TOOLS_PATH xdotool windowmap $windowid
+    $XDOTOOL windowmap $windowid
 elif [ "$1" == "off" ]; then
-    chroot $TOOLS_PATH xev-nx -rv -bi $windowid &> /dev/null &
-    chroot $TOOLS_PATH xdotool windowmap $windowid
+    $XEV_NX -rv -bi $windowid &> /dev/null &
+    $XDOTOOL windowmap $windowid
 elif [ "$1" == "video" ]; then
-    chroot $TOOLS_PATH xev-nx -tr -bi $windowid &> /dev/null &
-    chroot $TOOLS_PATH xdotool windowunmap $windowid
+    $XEV_NX -tr -bi $windowid &> /dev/null &
+    $XDOTOOL windowunmap $windowid
 elif [ "$1" == "osd" ]; then
     echo #TODO
 fi

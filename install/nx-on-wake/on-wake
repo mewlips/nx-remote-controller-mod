@@ -1,29 +1,52 @@
 #!/bin/bash
 
+INSTALL_PATH=/opt/storage/sdcard/app
+INSTALL_LOG=nx-remote-controller-mod-install.log
+INSTALL_LOG_PATH=/opt/storage/sdcard/$INSTALL_LOG
+TOOLS_PATH=/opt/usr/apps/nx-remote-controller-mod/tools
+
+blink() {
+    while [ -f /opt/storage/sdcard/nx-on-wake/on-wake ]; do
+        echo 1 > /sys/devices/platform/leds-gpio/leds/card/brightness
+        sleep 0.5
+        echo 0 > /sys/devices/platform/leds-gpio/leds/card/brightness
+        sleep 0.5
+    done
+}
+
+blink &
+
 # ========= force LCD on (crash on EVF) =========
 st app disp lcd
 sleep 1
 
-
-INSTALL_PATH=/opt/storage/sdcard/app
-TOOLS_PATH=$(mktemp -p /opt/usr -d tools.XXXXXX)
-INSTALL_LOG=$TOOLS_PATH/install.log
-YAD="chroot $TOOLS_PATH /usr/bin/yad"
-
-tar -C $TOOLS_PATH -xvf $INSTALL_PATH/tools.tar
-mkdir -pv $TOOLS_PATH/{dev,sbin,usr/sbin}
-chown root:root $TOOLS_PATH/bin/busybox
-chroot $TOOLS_PATH /bin/busybox --install -s
-mknod $TOOLS_PATH/dev/null c 1 3
-
-$INSTALL_PATH/install.sh &> $INSTALL_LOG
-$YAD --text-info --filename=$INSTALL_LOG --tail
+$INSTALL_PATH/install.sh &> $INSTALL_LOG_PATH
+result=$?
 
 if [ -f /opt/storage/sdcard/nx-on-wake/on-wake ]; then
     rm -f /opt/storage/sdcard/nx-on-wake/on-wake
 fi
-rm -rf $TOOLS_PATH
 
 sync;sync;sync;
 
-/opt/usr/nx-on-wake/on-wake
+if [ "$result" != 0 ]; then
+    reboot
+fi
+
+INSTALL_COMPLETED_MSG="\
+<big><span color='blue'>Installation completed!</span></big>
+
+Usage:
+
+  Press the 'MOBILE' button to run
+    the menu of 'NX Remote Controller Mod'.
+
+  Press 'OK' Button to reboot."
+
+export HOME=/root
+export USER=root
+chroot $TOOLS_PATH yad \
+    --text="$INSTALL_COMPLETED_MSG" \
+    --button=gtk-ok:0 --buttons-layout=center
+
+reboot

@@ -1,12 +1,6 @@
 #!/bin/bash
 
-APP_PATH=/opt/usr/apps/nx-remote-controller-mod
-TOOLS_PATH=$APP_PATH/tools
-CHROOT="chroot $TOOLS_PATH"
-YAD="$CHROOT yad"
-
-TITLE="<b><span fgcolor='yellow' bgcolor='#1010ff'>\
-       NX Remote Controller Mod (v0.8)      </span></b>"
+source /opt/usr/apps/nx-remote-controller-mod/common.sh
 
 ABOUT_TEXT="\
 $TITLE
