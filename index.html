@@ -1,17 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <title>mewlips</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-</head>
-<body>
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>nx-remote-controller-mod by mewlips</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
-<div class="container">
-</div>
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/mewlips/nx-remote-controller-mod">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/mewlips/nx-remote-controller-mod/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/mewlips/nx-remote-controller-mod/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
 
-</body>
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>nx-remote-controller-mod</h1>
+          <p>Remote Controller Mod for NX1/NX500</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/mewlips">mewlips</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a id="nx-remote-controller-mod" class="anchor" href="#nx-remote-controller-mod" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>nx-remote-controller-mod</h1>
+
+<p>Remote Controller Mod for NX1/NX500</p>
+
+<ul>
+<li>
+<p>Downloads</p>
+
+<ul>
+<li>TODO: <a href="https://github.com/mewlips/nx-remote-controller-mod/releases">https://github.com/mewlips/nx-remote-controller-mod/releases</a>
+</li>
+</ul>
+</li>
+<li>
+<p>Features</p>
+
+<ul>
+<li>Remote control camera from web browsers.
+
+<ul>
+<li>Mirroring camera screen</li>
+<li>Remote control functions</li>
+</ul>
+</li>
+<li>Silent shutter on/off (NX500 only)</li>
+<li>LCD on/off</li>
+</ul>
+</li>
+</ul>
+
+<h2>
+<a id="how-to-install" class="anchor" href="#how-to-install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How To Install</h2>
+
+<h3>
+<a id="camera" class="anchor" href="#camera" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Camera</h3>
+
+<ul>
+<li>
+<p>Prerequisites</p>
+
+<ul>
+<li>NX500 with firmware version 1.12 or NX1 with firmware version 1.41</li>
+<li><a href="https://github.com/ottokiksmaler/nx500_nx1_modding/tree/master/nx-on-wake">nx-wake-on 1.11</a></li>
+<li>(optional) <a href="https://github.com/ottokiksmaler/nx500_nx1_modding/tree/master/video-bitrate-mods/nx-patch">nx-patch 5.3</a>
+</li>
+</ul>
+</li>
+</ul>
+
+<ol>
+<li>Download <del><a href="https://github.com/mewlips/nx-remote-controller-mod/raw/master/nx-remote-controller-mod-v0.7.zip">https://github.com/mewlips/nx-remote-controller-mod/raw/master/nx-remote-controller-mod-v0.7.zip</a></del>
+</li>
+<li>Unzip the <del>nx-remote-controller-mod-v0.7.zip</del> file to root of your SD card.</li>
+<li>Insert the SD card into your camera and power up the camera.</li>
+<li>Wait. The installation will be completed soon.</li>
+</ol>
+
+<h3>
+<a id="android" class="anchor" href="#android" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Android</h3>
+
+<ul>
+<li>Install the <del><a href="https://github.com/mewlips/nx-remote-controller-mod/raw/master/NXRemoteController-v0.7.apk">https://github.com/mewlips/nx-remote-controller-mod/raw/master/NXRemoteController-v0.7.apk</a></del>
+</li>
+</ul>
+
+<h2>
+<a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How To Use</h2>
+
+<ol>
+<li>Press the 'MOBILE' button.
+
+<ul>
+<li>Basic 'MOBILE' function replaced by nx-remote-controller-mod.</li>
+<li>It will open the Wi-Fi Settings app if the camera is not connected to a Wi-Fi network.</li>
+<li>If you have a configured Wi-Fi network, the camera will be automatically try to connect to the configured Wi-Fi AP.</li>
+<li>After the camera is connected on network, then app menu will be launched.</li>
+</ul>
+</li>
+<li>Make sure the camera and the PC or Mobile device are on the same Wi-Fi network.</li>
+<li>Find IP Address of your camera from the app menu.</li>
+<li>Open 'http://' in web browser.</li>
+</ol>
+
+<h2>
+<a id="related-projects" class="anchor" href="#related-projects" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Related projects</h2>
+
+<ul>
+<li><a href="https://github.com/ottokiksmaler/nx500_nx1_modding">Samsung NX500 and NX1 Modding</a></li>
+<li><a href="https://github.com/ge0rg/samsung-nx-hacks">Samsung NX Smart Camera Hacks</a></li>
+<li><a href="https://github.com/jdieter/nx300m-autobackup">nx300m-autobackup</a></li>
+</ul>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>GPL-3</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
 </html>
