@@ -26,9 +26,9 @@ mod_key &
 
 while true; do
     cmd=$(cat $FIFO_PATH)
-    if is_nx500; then
-        echo > $FIFO_PATH
-    fi
+#    if is_nx500; then
+#        echo > $FIFO_PATH
+#    fi
     if [ "$cmd" != "" ]; then
         echo execute command : $cmd
         $cmd

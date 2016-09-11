@@ -65,6 +65,7 @@
 
     #cameraScreen {
       position: relative;
+      background: black;
     }
     #liveview {
       width: 100%;
@@ -198,10 +199,24 @@
           <ul class="dropdown-menu" id="cameras">
           </ul>
         </li>
+        <li>
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            <span class="glyphicon glyphicon-info-sign"></span>
+              Help
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu">
+              <li><a href="https://mewlips.github.io/nx-remote-controller-mod" target="_blank">Project Home</a></li>
+              <li><a href="https://github.com/mewlips/nx-remote-controller-mod" target="-blank">Github Page</a></li>
+              <li onclick="$('#aboutModal').modal('show');"><a href="#">About nx-remote-controller-mod</a></li>
+              <li>
+          </ul>
+        </li>
       </ul>
     </div>
   </div>
 </nav>
+
 <div class="container-fluid">
   <div class="row">
     <div class="col-sm-8 col-xs-12">
@@ -362,6 +377,26 @@
       </div>
     </div>
   </div>
+
+  <div id="aboutModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">About nx-remote-controller-mod v0.8</h4>
+        </div>
+        <div class="modal-body">
+          <p>Copyrights: Mewlips &lt;mewlips@gmail.com&gt;</p>
+          <p>License: <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPL-3</a></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 </body>
 </html>

@@ -23,6 +23,11 @@ Open http://$IP_ADDRESS in web browser."
 get_network_info() {
     IP_ADDRESS=$(ifconfig $NET_DEVICE | grep inet | sed -e 's/.*addr://' -e 's/ .*//')
     CONNECTED_AP=$(iwconfig $NET_DEVICE | grep ESSID | sed -e 's/.*://' -e 's/\"//g' -e 's/ .*//g')
+    if [ "$IP_ADDRESS" != "" ]; then
+        URL="http://$IP_ADDRESS"
+    else
+        URL="Not available."
+    fi
 }
 
 run_wifi_settings() {
@@ -43,8 +48,8 @@ main_menu() {
     CSPAN="</i></span>"
     settings=$($YAD \
         --undecorated --scroll \
-        --form --field="${SPAN}IP Address${CSPAN}:RO" "$IP_ADDRESS" \
-        --form --field="${SPAN}Connected Wi-Fi AP${CSPAN}:RO" "$CONNECTED_AP" \
+        --form --field="${SPAN}Remote Control URL${CSPAN}:RO" "http://$IP_ADDRESS" \
+        --form --field="${SPAN}Connected Wi-Fi AP${CSPAN}:RO" "${CONNECTED_AP:-Not connected.}" \
         --form --field=":LBL" "" \
         --form --field="${SPAN}Shutter Type${CSPAN}:cb" "$($APP_PATH/shutter.sh get)" \
         --form --field="${SPAN}LCD Control${CSPAN}:cb" "on!off!video" \
@@ -64,7 +69,7 @@ killall yad
 get_network_info
 if [ "$IP_ADDRESS" == "" ]; then
     run_wifi_settings
-    for i in $(seq 10); do
+    for i in $(seq 3); do
         sleep 1
         get_network_info
         if [ "$IP_ADDRESS" != "" ]; then

@@ -26,5 +26,5 @@ is_nx300() {
 }
 
 TITLE="<b><span fgcolor='yellow' bgcolor='#1010ff'>\
-       NX Remote Controller Mod (v0.8)       </span></b>"
+       NX Remote Controller Mod (v0.8)      </span></b>"
 
