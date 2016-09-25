@@ -3,9 +3,17 @@ function LiveView(controller) {
     this.started = false;
     this.quality = false;
     this.timeoutInterval = 100;
+    this.target = null;
+
+    this.init();
 }
 
-LiveView.prototype.setup = function () {
+LiveView.prototype.init= function () {
+    var targetId = this.controller.isMainController
+                    ? 'liveview-main'
+                    : 'liveview-' + this.controller.hostname.replace(/\./g, '-');
+    this.target = $('<canvas class="liveview"></canvas>').attr('id', targetId);
+    this.controller.target.append(this.target);
 }
 
 LiveView.convertYUVtoRGB = function (y, u, v) {
@@ -109,7 +117,7 @@ LiveView.nv12toRgba2 = function (nv12, rgba, width, height) {
 
 LiveView.prototype.getData = function (low) {
     var self = this;
-    var cvs = document.getElementById("liveview");
+    var cvs = this.target[0];
     var ctx = cvs.getContext("2d");
     var url = this.controller.createUrl('/api/v1/liveview/get');
 

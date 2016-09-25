@@ -1,8 +1,20 @@
-function NxRemoteController(hostname) {
+function NxRemoteController(hostname, target) {
+    this.hostname = hostname;
     this.urlPrefix = '';
-    if (hostname != null) {
+    this.target = $('#cameraScreen');
+    this.isMainController = false;
+
+    if (this.hostname != null) {
         this.urlPrefix = 'http://' + hostname; 
+    } else {
+        this.hostname = document.location.hostname;
     }
+    if (target != null) {
+        this.target = target;
+    } else {
+        this.isMainController = true;
+    }
+
     this.nxModelName = "";
     this.nxFwVer = "";
     this.modalEnabled = false;
@@ -10,6 +22,8 @@ function NxRemoteController(hostname) {
     this.liveView = null;
     this.osd = null;
     this.input = null;
+
+    this.init();
 }
 
 NxRemoteController.prototype.createUrl = function (path) {
@@ -150,8 +164,10 @@ NxRemoteController.prototype.getCameraStatus = function () {
             for (var i = 0; i < status.cameras.length; i++) {
                 var ip = status.cameras[i].ip;
                 var model = status.cameras[i].packet.split('|')[2];
+                status.cameras[i].model = model;
                 cameras += '<li><a href="http://' + ip + '">' + model +
                            ' (' + status.cameras[i].ip + ')</a></li>';
+                //app.viewfinder.setCameras(status.cameras);
             }
             $('#cameras').html(cameras);
             if (self.modalEnabled == true) {
@@ -210,20 +226,17 @@ NxRemoteController.prototype.ledBlink = function () {
     }
 }
 
-NxRemoteController.prototype.setup = function () {
+NxRemoteController.prototype.init = function () {
     var self = this;
 
     this.getCameraInfo();
 
-    this.liveView = new LiveView(this);
-
     this.osd = new Osd(this);
-    this.osd.setup();
-
+    this.liveView = new LiveView(this);
     this.input = new Input(this);
-    this.input.setup();
 
     this.controlLcd('on');
+
     setInterval(function () {
         self.getCameraStatus();
     }, 1000);

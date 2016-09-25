@@ -5,9 +5,18 @@ function Osd(controller) {
     this.hashs = [];
     this.scale = 1.0;
     this.timeoutInterval = 10;
+    this.target = null;
+
+    this.init();
 }
 
-Osd.prototype.setup = function () {
+Osd.prototype.init = function () {
+    var osdId = this.controller.isMainController
+                    ? 'osd-main'
+                    : 'osd-' + this.controller.hostname.replace(/\./g, '-');
+    this.target = $('<canvas class="osd"></canvas>').attr('id', osdId);
+    this.controller.target.append(this.target);
+
     this.onMouseDown();
     this.onMouseMove();
     this.onMouseUp();
@@ -30,18 +39,18 @@ Osd.prototype.onMouseDown = function () {
             pageX = ev.originalEvent.touches[0].pageX;
             pageY = ev.originalEvent.touches[0].pageY;
         }
-        var cvs = document.getElementById("osd");
-        self.scale = cvs.width / $('#cameraScreen').width();
+        var cvs = self.target[0];
+        self.scale = cvs.width / self.controller.target.width();
         var x = Math.floor((pageX - parentOffset.left) * self.scale);
         var y = Math.floor((pageY - parentOffset.top) * self.scale);
         self.mouseDowned = true;
         self.controller.input.onMouseMove(x, y);
         self.controller.input.onMouseDown();
     }
-    $('#osd').on('mousedown', function (ev) {
+    this.target.on('mousedown', function (ev) {
         mouseDown(ev, $(this), true);
     });
-    $('#osd').on('touchstart', function (ev) {
+    this.target.on('touchstart', function (ev) {
         mouseDown(ev, $(this), false);
     });
 }
@@ -67,10 +76,10 @@ Osd.prototype.onMouseMove = function () {
         }
     }
 
-    $('#osd').on('mousemove', function (ev) {
+    this.target.on('mousemove', function (ev) {
         mouseMove(ev, $(this), true);
     });
-    $('#osd').on('touchmove', function (ev) {
+    this.target.on('touchmove', function (ev) {
         mouseMove(ev, $(this), false);
     });
 }
@@ -83,20 +92,20 @@ Osd.prototype.onMouseUp = function () {
         self.mouseDowned = false;
     }
 
-    $('#osd').on('mouseup', function (ev) {
+    this.target.on('mouseup', function (ev) {
         mouseUp(ev, true);
     });
-    $('#osd').on('touchcancel', function (ev) {
+    this.target.on('touchcancel', function (ev) {
         mouseUp(ev, false);
     });
-    $('#osd').on('touchend', function (ev) {
+    this.target.on('touchend', function (ev) {
         mouseUp(ev, false);
     });
 }
 
 Osd.prototype.onWheel = function () {
     var self = this;
-    $('#osd').bind('DOMMouseScroll mousewheel', function(e) {
+    this.target.bind('DOMMouseScroll mousewheel', function(e) {
         if (e.originalEvent.wheelDelta > 0 || e.originalEvent.detail < 0) {
             self.controller.input.onKey('UP');
         } else {
@@ -120,7 +129,7 @@ Osd.prototype.clearHashs = function () {
 
 Osd.prototype.getData = function () {
     var self = this;
-    var cvs = document.getElementById("osd");
+    var cvs = this.target[0];
     var ctx = cvs.getContext("2d");
     var hashs_str = '';
     for (var i = 0; i < this.hashs.length; i++) {
@@ -141,7 +150,7 @@ Osd.prototype.getData = function () {
         url: self.controller.createUrl('/api/v1/osd/get'),
         type: 'POST',
         data: { "hashs" : hashs_str },
-        timeout: 1000,
+        timeout: 3000,
         success: function(str) {
             if (str.length == 0) {
                 setTimeout(function () {

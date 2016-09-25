@@ -5,6 +5,8 @@ function Input(controller) {
     this.evDown = false;
     this.shutterStartX;
     this.shutterStartY;
+
+    this.init();
 }
 
 Input.getKeyMapping = function (key) {
@@ -212,7 +214,7 @@ Input.prototype.onMouseUp = function () {
     });
 }
 
-Input.prototype.setup = function () {
+Input.prototype.init = function () {
     var self = this;
 
     $("#button-ev").on("click", function() {
