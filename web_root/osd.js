@@ -1,10 +1,23 @@
-var mouseDowned = false;
-var osdStarted = false;
-var osdHashs = [];
-var osdScale = 1.0;
-var osdTimeoutInterval = 10;
+function Osd(controller) {
+    this.controller = controller;
+    this.mouseDowned = false;
+    this.started = false;
+    this.hashs = [];
+    this.scale = 1.0;
+    this.timeoutInterval = 10;
+}
 
-function onOsdMouseDown() {
+Osd.prototype.setup = function () {
+    this.onMouseDown();
+    this.onMouseMove();
+    this.onMouseUp();
+    this.onWheel();
+
+    return this;
+}
+
+Osd.prototype.onMouseDown = function () {
+    var self = this;
     function mouseDown(ev, osd, mouse) {
         ev.preventDefault();
         var parentOffset = osd.parent().offset();
@@ -18,12 +31,12 @@ function onOsdMouseDown() {
             pageY = ev.originalEvent.touches[0].pageY;
         }
         var cvs = document.getElementById("osd");
-        osdScale = cvs.width / $('#cameraScreen').width();
-        var x = Math.floor((pageX - parentOffset.left) * osdScale);
-        var y = Math.floor((pageY - parentOffset.top) * osdScale);
-        mouseDowned = true;
-        onMouseMove(x, y);
-        onMouseDown();
+        self.scale = cvs.width / $('#cameraScreen').width();
+        var x = Math.floor((pageX - parentOffset.left) * self.scale);
+        var y = Math.floor((pageY - parentOffset.top) * self.scale);
+        self.mouseDowned = true;
+        self.controller.input.onMouseMove(x, y);
+        self.controller.input.onMouseDown();
     }
     $('#osd').on('mousedown', function (ev) {
         mouseDown(ev, $(this), true);
@@ -33,10 +46,11 @@ function onOsdMouseDown() {
     });
 }
 
-function onOsdMouseMove() {
+Osd.prototype.onMouseMove = function () {
+    var self = this;
     function mouseMove(ev, osd, mouse) {
         ev.preventDefault();
-        if (mouseDowned == true) {
+        if (self.mouseDowned == true) {
             var parentOffset = osd.parent().offset();
             var pageX;
             var pageY;
@@ -47,9 +61,9 @@ function onOsdMouseMove() {
                 pageX = ev.originalEvent.touches[0].pageX;
                 pageY = ev.originalEvent.touches[0].pageY;
             }
-            var x = Math.floor((pageX - parentOffset.left) * osdScale);
-            var y = Math.floor((pageY - parentOffset.top) * osdScale);
-            onMouseMove(x, y);
+            var x = Math.floor((pageX - parentOffset.left) * self.scale);
+            var y = Math.floor((pageY - parentOffset.top) * self.scale);
+            self.controller.input.onMouseMove(x, y);
         }
     }
 
@@ -61,11 +75,12 @@ function onOsdMouseMove() {
     });
 }
 
-function onOsdMouseUp() {
+Osd.prototype.onMouseUp = function () {
+    var self = this;
     function mouseUp(ev, mouse) {
         ev.preventDefault();
-        onMouseUp();
-        mouseDowned = false;
+        self.controller.input.onMouseUp();
+        self.mouseDowned = false;
     }
 
     $('#osd').on('mouseup', function (ev) {
@@ -79,12 +94,13 @@ function onOsdMouseUp() {
     });
 }
 
-function onOsdWheel() {
+Osd.prototype.onWheel = function () {
+    var self = this;
     $('#osd').bind('DOMMouseScroll mousewheel', function(e) {
         if (e.originalEvent.wheelDelta > 0 || e.originalEvent.detail < 0) {
-            onKey('UP');
+            self.controller.input.onKey('UP');
         } else {
-            onKey('DOWN');
+            self.controller.input.onKey('DOWN');
         }
         return false;
     });
@@ -94,20 +110,21 @@ function toHex(d) {
     return  ("0000000"+(Number(d).toString(16))).slice(-8)
 }
 
-function clearHashs() {
+Osd.prototype.clearHashs = function () {
     var numBlocks = 120;
-    osdHashs = [];
+    this.hashs = [];
     for (var i = 0; i < numBlocks; i++) {
-        osdHashs.push(0);
+        this.hashs.push(0);
     }
 }
 
-function getOsd() {
+Osd.prototype.getData = function () {
+    var self = this;
     var cvs = document.getElementById("osd");
     var ctx = cvs.getContext("2d");
     var hashs_str = '';
-    for (var i = 0; i < osdHashs.length; i++) {
-        hashs_str += toHex(osdHashs[i]);
+    for (var i = 0; i < this.hashs.length; i++) {
+        hashs_str += toHex(this.hashs[i]);
     }
 
     function clearOsd() {
@@ -117,17 +134,19 @@ function getOsd() {
             buffer[i] = 0;
         }
         ctx.putImageData(imageData, 0, 0);
-        clearHashs();
+        self.clearHashs();
     }
 
     $.ajax({
-        url: '/api/v1/osd/get',
+        url: self.controller.createUrl('/api/v1/osd/get'),
         type: 'POST',
         data: { "hashs" : hashs_str },
         timeout: 1000,
         success: function(str) {
             if (str.length == 0) {
-                setTimeout(getOsd, osdTimeoutInterval);
+                setTimeout(function () {
+                    self.getData();
+                }, self.timeoutInterval);
                 return;
             }
 
@@ -166,10 +185,10 @@ function getOsd() {
                     // end of blocks
                     break;
                 }
-                osdHashs[blockIndex] = (data[index  ] & 0xff) << 24 |
-                                       (data[index+1] & 0xff) << 16 |
-                                       (data[index+2] & 0xff) <<  8 |
-                                       (data[index+3] & 0xff);
+                self.hashs[blockIndex] = (data[index  ] & 0xff) << 24 |
+                                         (data[index+1] & 0xff) << 16 |
+                                         (data[index+2] & 0xff) <<  8 |
+                                         (data[index+3] & 0xff);
                 index += 4;
                 for (var j = 0; j < blockHeight; j++) {
                     for (var k = 0; k < blockWidth; k++) {
@@ -185,44 +204,39 @@ function getOsd() {
             }
             ctx.putImageData(imageData, 0, 0);
 
-            if (osdStarted) {
-                setTimeout(getOsd, osdTimeoutInterval);
+            if (self.started) {
+                setTimeout(function () {
+                    self.getData();
+                }, self.timeoutInterval);
             } else {
                 clearOsd();
             }
         },
         error: function (request, status, error) {
             clearOsd();
-            osdStarted = false;
+            self.started = false;
         }
     });
 }
 
-function setupOsdInput() {
-    onOsdMouseDown();
-    onOsdMouseMove();
-    onOsdMouseUp();
-    onOsdWheel();
-}
-
-function startOsd() {
-    if (!osdStarted) {
-        clearHashs();
-        osdStarted = true;
-        getOsd();
+Osd.prototype.start = function () {
+    if (!this.started) {
+        this.clearHashs();
+        this.started = true;
+        this.getData();
     }
     if (typeof(Storage) !== "undefined") {
         localStorage.setItem("osd", "show");
     }
 }
 
-function stopOsd() {
-    osdStarted = false;
+Osd.prototype.stop = function () {
+    this.started = false;
     if (typeof(Storage) !== "undefined") {
         localStorage.setItem("osd", "hide");
     }
 }
 
-function setOsdTimeoutInterval(interval) {
-    osdTimeoutInterval = interval;
+Osd.prototype.setTimeoutInterval = function (interval) {
+    this.timeoutInterval = interval;
 }

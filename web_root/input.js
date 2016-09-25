@@ -1,4 +1,13 @@
-function getKeyMapping(key) {
+function Input(controller) {
+    this.controller = controller;
+    this.s1Down = false;
+    this.s2Down = false;
+    this.evDown = false;
+    this.shutterStartX;
+    this.shutterStartY;
+}
+
+Input.getKeyMapping = function (key) {
     if (key == 'UP') {
         return 'KP_Up';
     } else if (key == 'LEFT') {
@@ -124,103 +133,113 @@ function getKeyMapping(key) {
     return key;
 }
 
-function inputInjectKeepAlive() {
+Input.prototype.injectKeepAlive = function () {
+    var self = this;
     $.ajax({
-        url: '/api/v1/input/inject_keep_alive',
+        url: self.controller.createUrl('/api/v1/input/inject_keep_alive'),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function onKey(key) {
+Input.prototype.onKey = function (key) {
+    var self = this;
     $.ajax({
-        url: '/api/v1/input/inject?key=' + getKeyMapping(key),
+        url: self.controller.createUrl('/api/v1/input/inject?key=' +
+                                       Input.getKeyMapping(key)),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function onKeyDown(key) {
+Input.prototype.onKeyDown = function (key) {
+    var self = this;
     $.ajax({
-        url: '/api/v1/input/inject?keydown=' + getKeyMapping(key),
+        url: self.controller.createUrl('/api/v1/input/inject?keydown=' +
+                                       Input.getKeyMapping(key)),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function onKeyUp(key) {
+Input.prototype.onKeyUp = function (key) {
+    var self = this;
     $.ajax({
-        url: '/api/v1/input/inject?keyup=' + getKeyMapping(key),
+        url: self.controller.createUrl('/api/v1/input/inject?keyup=' +
+                                       Input.getKeyMapping(key)),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function onMouseDown() {
+Input.prototype.onMouseDown = function () {
+    var self = this;
     $.ajax({
-        url: '/api/v1/input/inject?mousedown=1',
+        url: self.controller.createUrl('/api/v1/input/inject?mousedown=1'),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function onMouseMove(x, y) {
-    if (isNx300()) {
+Input.prototype.onMouseMove = function (x, y) {
+    var self = this;
+    if (this.controller.isNx300()) {
         var temp = y;
         y = x;
         x = 480 - temp;
         y = y;
     }
     $.ajax({
-        url: '/api/v1/input/inject?mousemove=' + x + '-' + y,
+        url: self.controller.createUrl('/api/v1/input/inject?mousemove=' + x + '-' + y),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function onMouseUp() {
+Input.prototype.onMouseUp = function () {
+    var self = this;
     $.ajax({
-        url: '/api/v1/input/inject?mouseup=1',
+        url: self.controller.createUrl('/api/v1/input/inject?mouseup=1'),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-var s1Down = false;
-var s2Down = false;
-var evDown = false;
-var shutterStartX;
-var shutterStartY;
+Input.prototype.setup = function () {
+    var self = this;
 
-function setupInput() {
-
-    //$("#button-af-on").on("tap", function() { onKey('AF_ON'); });
-    //$("#button-mf-zoom").on("tap", function() { onKey('MF_ZOOM'); });
     $("#button-ev").on("click", function() {
-        if (evDown) {
-            onKeyUp('EV');
-            evDown = false;
+        if (self.evDown) {
+            self.onKeyUp('EV');
+            self.evDown = false;
         } else {
-            onKeyDown('EV');
-            evDown = true;
+            self.onKeyDown('EV');
+            self.evDown = true;
         }
     });
 
     function shutterStart(ev, mouse) {
         ev.preventDefault();
         if (mouse) {
-            shutterStartY = ev.pageY;
+            self.shutterStartY = ev.pageY;
         } else {
-            shutterStartY = ev.originalEvent.touches[0].pageY;
+            self.shutterStartY = ev.originalEvent.touches[0].pageY;
         }
-        if (s1Down) {
-            onKeyUp('S1');
-            s1Down = false;
+        if (self.s1Down) {
+            self.onKeyUp('S1');
+            self.s1Down = false;
             $('#button-shutter').css('transform', "translateY(0px)");
             $('#button-shutter').css('box-shadow', "0 14px 0 0 #888");
         }
-        onKeyDown('S1');
-        s1Down = true;
+        self.onKeyDown('S1');
+        self.s1Down = true;
         $('#button-shutter').css('transform', "translateY(7px)");
         $('#button-shutter').css('box-shadow', "0 7px 0 0 #888");
     }
@@ -232,35 +251,35 @@ function setupInput() {
         } else {
             y = ev.originalEvent.touches[0].pageY;
         }
-        if (shutterStartY < y - 5) {
-            if (s1Down && !s2Down) {
+        if (self.shutterStartY < y - 5) {
+            if (self.s1Down && !self.s2Down) {
                 $('#button-shutter').css('transform', "translateY(14px)");
                 $('#button-shutter').css('box-shadow', "none");
-                onKeyDown('S2');
-                s2Down = true;
+                self.onKeyDown('S2');
+                self.s2Down = true;
             }
-        } else if (shutterStartY > y) {
-            if (s2Down) {
+        } else if (self.shutterStartY > y) {
+            if (self.s2Down) {
                 $('#button-shutter').css('transform', "translateY(7px)");
                 $('#button-shutter').css('box-shadow', "0 7px 0 0 #888");
-                onKeyUp('S2');
-                s2Down = false;
+                self.onKeyUp('S2');
+                self.s2Down = false;
             }
         }
     }
 
     function shutterEnd(ev) {
-        if (s2Down) {
+        if (self.s2Down) {
             $('#button-shutter').css('transform', "translateY(7px)");
             $('#button-shutter').css('box-shadow', "0 7px 0 0 #888");
-            onKeyUp('S2');
-            s2Down = false;
+            self.onKeyUp('S2');
+            self.s2Down = false;
         }
-        if (s1Down) {
+        if (self.s1Down) {
             $('#button-shutter').css('transform', "translateY(0px)");
             $('#button-shutter').css('box-shadow', "0 14px 0 0 #888");
-            onKeyUp('S1');
-            s1Down = false;
+            self.onKeyUp('S1');
+            self.s1Down = false;
         }
     }
 

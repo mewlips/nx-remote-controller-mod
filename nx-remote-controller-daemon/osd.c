@@ -351,7 +351,10 @@ void osd_http_send(struct mg_connection *nc, struct http_message *hm)
         }
     }
 
-    mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
+    mg_printf(nc, "HTTP/1.1 200 OK\r\n"
+                  "Access-Control-Allow-Origin: *\r\n"
+                  "Access-Control-Allow-Headers: X-Requested-With\r\n"
+                  "Content-Length: %d\r\n"
                   "Content-Type: text/plain; charset=x-user-defined\r\n"
                   "\r\n", 8 + send_count * sizeof(s_osd_data.blocks[0]) + 4);
 

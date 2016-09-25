@@ -18,6 +18,8 @@ static struct mg_serve_http_opts s_http_server_opts;
 void send_200(struct mg_connection *nc)
 {
     mg_printf(nc, "%s", "HTTP/1.1 200 OK\r\n"
+                        "Access-Control-Allow-Origin: *\r\n"
+                        "Access-Control-Allow-Headers: X-Requested-With\r\n"
                         "Content-Length: 0\r\n\r\n");
 }
 
@@ -41,6 +43,8 @@ static void handle_camera_api(struct mg_connection *nc,
 {
     if (mg_vcmp(func, "info") == 0) {
         mg_printf(nc, "HTTP/1.1 200 OK\r\n"
+                      "Access-Control-Allow-Origin: *\r\n"
+                      "Access-Control-Allow-Headers: X-Requested-With\r\n"
                       "Transfer-Encoding: chunked\r\n"
                       "Content-Type: application/json; charset=utf-8\r\n\r\n");
         mg_printf_http_chunk(nc, "{\"model\":\"%s\",\"fw_ver\":\"%s\"}",
@@ -54,6 +58,8 @@ static void handle_camera_api(struct mg_connection *nc,
             snprintf(json_cameras, sizeof(json_cameras), "[]");
         }
         mg_printf(nc, "HTTP/1.1 200 OK\r\n"
+                      "Access-Control-Allow-Origin: *\r\n"
+                      "Access-Control-Allow-Headers: X-Requested-With\r\n"
                       "Transfer-Encoding: chunked\r\n"
                       "Content-Type: application/json; charset=utf-8\r\n\r\n");
         mg_printf_http_chunk(nc,

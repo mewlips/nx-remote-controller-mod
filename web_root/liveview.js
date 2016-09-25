@@ -1,8 +1,14 @@
-var liveviewStarted = false;
-var liveviewQuality;
-var liveviewTimeoutInterval = 100;
+function LiveView(controller) {
+    this.controller = controller;
+    this.started = false;
+    this.quality = false;
+    this.timeoutInterval = 100;
+}
 
-function convertYUVtoRGB(y, u, v) {
+LiveView.prototype.setup = function () {
+}
+
+LiveView.convertYUVtoRGB = function (y, u, v) {
     var r, g, b;
 
     r = y + 1.402 * v + 0.5;
@@ -16,7 +22,7 @@ function convertYUVtoRGB(y, u, v) {
     return {r:r, g:g, b:b};
 }
 
-function nv12toRgba(nv12, rgba, width, height) {
+LiveView.nv12toRgba = function (nv12, rgba, width, height) {
     var size = width * height;
     var offset = size;
     var u, v, y1, y2, y3, y4;
@@ -32,25 +38,25 @@ function nv12toRgba(nv12, rgba, width, height) {
         u = u - 128;
         v = v - 128;
 
-        var rgb = convertYUVtoRGB(y1, u, v);
+        var rgb = LiveView.convertYUVtoRGB(y1, u, v);
         rgba[i*4] = rgb.r;
         rgba[i*4+1] = rgb.g;
         rgba[i*4+2] = rgb.b;
         rgba[i*4+3] = 255;
 
-        rgb = convertYUVtoRGB(y2, u, v);
+        rgb = LiveView.convertYUVtoRGB(y2, u, v);
         rgba[i*4+4] = rgb.r;
         rgba[i*4+5] = rgb.g;
         rgba[i*4+6] = rgb.b;
         rgba[i*4+7] = 255;
 
-        rgb = convertYUVtoRGB(y3, u, v);
+        rgb = LiveView.convertYUVtoRGB(y3, u, v);
         rgba[width*4+i*4] = rgb.r;
         rgba[width*4+i*4+1] = rgb.g;
         rgba[width*4+i*4+2] = rgb.b;
         rgba[width*4+i*4+3] = 255;
 
-        rgb = convertYUVtoRGB(y4, u, v);
+        rgb = LiveView.convertYUVtoRGB(y4, u, v);
         rgba[width*4+i*4+4] = rgb.r;
         rgba[width*4+i*4+5] = rgb.g;
         rgba[width*4+i*4+6] = rgb.b;
@@ -62,7 +68,7 @@ function nv12toRgba(nv12, rgba, width, height) {
     }
 }
 
-function nv12toRgba2(nv12, rgba, width, height) {
+LiveView.nv12toRgba2 = function (nv12, rgba, width, height) {
     var size = (width / 2) * (height / 2);
     var offset = size;
     var y, u, v;
@@ -72,7 +78,7 @@ function nv12toRgba2(nv12, rgba, width, height) {
         u = (nv12[offset + k] & 0xff) - 128;
         v = (nv12[offset + k + 1] & 0xff) - 128;
 
-        var rgb = convertYUVtoRGB(y, u, v);
+        var rgb = LiveView.convertYUVtoRGB(y, u, v);
         rgba[j+0] = rgb.r;
         rgba[j+1] = rgb.g;
         rgba[j+2] = rgb.b;
@@ -101,16 +107,17 @@ function nv12toRgba2(nv12, rgba, width, height) {
     }
 }
 
-function getLiveview(low) {
+LiveView.prototype.getData = function (low) {
+    var self = this;
     var cvs = document.getElementById("liveview");
     var ctx = cvs.getContext("2d");
-    var url = '/api/v1/liveview/get';
+    var url = this.controller.createUrl('/api/v1/liveview/get');
 
     if (low) {
-        url = '/api/v1/liveview/get_low';
+        url = this.controller.createUrl('/api/v1/liveview/get_low');
     }
 
-    liveviewQuality = low;
+    this.quality = low;
 
     function drawBlack(buffer) {
         for (var i = 0; i < buffer.length; i++) {
@@ -126,9 +133,9 @@ function getLiveview(low) {
         var imageData = ctx.createImageData(width, height);
         var buffer = imageData.data;
         if (low) {
-            nv12toRgba2(nv12, buffer, width, height);
+            LiveView.nv12toRgba2(nv12, buffer, width, height);
         } else {
-            nv12toRgba(nv12, buffer, width, height);
+            LiveView.nv12toRgba(nv12, buffer, width, height);
         }
         ctx.putImageData(imageData, (cvs.width - width) / 2,
                                     (cvs.height - height) / 2);
@@ -167,7 +174,7 @@ function getLiveview(low) {
                 nv12.push(str.charCodeAt(i));
             }
 
-            if (isNx300()) {
+            if (self.controller.isNx300()) {
                 if (cvs.width != 800) {
                     cvs.width = 800;
                 }
@@ -205,11 +212,11 @@ function getLiveview(low) {
                 clearLiveview();
             }
 
-            if (liveviewStarted) {
-                if (liveviewQuality == low) {
+            if (self.started) {
+                if (self.quality == low) {
                     setTimeout(function () {
-                        getLiveview(low)
-                    }, liveviewTimeoutInterval);
+                        self.getData(low)
+                    }, self.timeoutInterval);
                 }
             } else {
                 clearLiveview();
@@ -217,28 +224,28 @@ function getLiveview(low) {
         },
         error: function (request, status, error) {
             clearLiveview();
-            liveviewStarted = false;
+            self.started = false;
         }
     });
 }
 
-function startLiveview(low) {
-    if (!liveviewStarted) {
-        liveviewStarted = true;
-        getLiveview(low);
+LiveView.prototype.start = function (low) {
+    if (!this.started) {
+        this.started = true;
+        this.getData(low);
     }
     if (typeof(Storage) !== "undefined") {
         localStorage.setItem("liveview", low ? "lq" : "hq");
     }
 }
 
-function stopLiveview() {
-    liveviewStarted = false;
+LiveView.prototype.stop = function () {
+    this.started = false;
     if (typeof(Storage) !== "undefined") {
         localStorage.setItem("liveview", "hide");
     }
 }
 
-function setLiveviewTimeoutInterval(interval) {
-    liveviewTimeoutInterval = interval;
+LiveView.prototype.setTimeoutInterval = function (interval) {
+    this.timeoutInterval = interval;
 }

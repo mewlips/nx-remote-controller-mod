@@ -1,75 +1,90 @@
-var nxModelName;
-var nxFwVer;
-var modalEnabled = false;
-var keepAliveTimer;
+function NxRemoteController(hostname) {
+    this.urlPrefix = '';
+    if (hostname != null) {
+        this.urlPrefix = 'http://' + hostname; 
+    }
+    this.nxModelName = "";
+    this.nxFwVer = "";
+    this.modalEnabled = false;
+    this.keepAliveTimer = null;
+    this.liveView = null;
+    this.osd = null;
+    this.input = null;
+}
 
-function getCameraInfo() {
+NxRemoteController.prototype.createUrl = function (path) {
+    return this.urlPrefix + path;
+}
+
+NxRemoteController.prototype.getCameraInfo = function () {
+    var self = this;
     $.ajax({
-        url: '/api/v1/camera/info',
-        success: function(info) {
-            nxModelName = info.model;
-            nxFwVer = info.fw_ver;
+        url: self.createUrl('/api/v1/camera/info'),
+        success: function (info) {
+            self.nxModelName = info.model;
+            self.nxFwVer = info.fw_ver;
 
             var text = 'NX Remote Controller ' +
                        '[ ' + info.model + ' (fw ' + info.fw_ver + ')]';
             document.title = text;
 
-            if (isNx1()) {
+            if (self.isNx1()) {
                 $('.nx1-only').show();
             } else {
                 $('.nx1-only').hide();
             }
-            if (isNx500()) {
+            if (self.isNx500()) {
                 $('.nx500-only').show();
             } else {
                 $('.nx500-only').hide();
             }
-            if (isNx1() || isNx500()) {
+            if (self.isNx1() || self.isNx500()) {
                 $('.nx1-nx500-only').show();
             } else {
                 $('.nx1-nx500-only').hide();
             }
-            if (isNx300()) {
+            if (self.isNx300()) {
                 $('.nx300-only').show();
             } else {
                 $('.nx300-only').hide();
             }
-            if (!isNx1()) {
+            if (!self.isNx1()) {
                 $('.not-nx1-only').show();
             } else {
                 $('.not-nx1-only').hide();
             }
 
-            if (keepAliveTimer) {
-                clearInterval(keepAliveTimer);
+            if (self.keepAliveTimer) {
+                clearInterval(self.keepAliveTimer);
             }
-            inputInjectKeepAlive();
-            keepAliveTimer = setInterval(function () {
-                inputInjectKeepAlive();
+            self.input.injectKeepAlive();
+            self.keepAliveTimer = setInterval(function () {
+                self.input.injectKeepAlive();
             }, 25*1000);
         }
     });
 }
 
-function isNx1() {
-    return nxModelName == 'NX1';
+NxRemoteController.prototype.isNx1 = function () {
+    return this.nxModelName == 'NX1';
 }
 
-function isNx500() {
-    return nxModelName == 'NX500';
+NxRemoteController.prototype.isNx500 = function () {
+    return this.nxModelName == 'NX500';
 }
 
-function isNx300() {
-    return nxModelName == 'NX300';
+NxRemoteController.prototype.isNx300 = function () {
+    return this.nxModelName == 'NX300';
 }
 
-function getCameraStatus() {
+NxRemoteController.prototype.getCameraStatus = function () {
+    var self = this;
     $.ajax({
-        url: '/api/v1/camera/status',
+        url: self.createUrl('/api/v1/camera/status'),
         timeout: 1000,
         success: function(status) {
             var html = '';
-            if (isNx1()) {
+            if (self.isNx1()) {
                 var batteryIcon;
                 if (status.battery_percent > 75) {
                     batteryIcon = '<i class="fa fa-battery-4"></i>';
@@ -110,24 +125,24 @@ function getCameraStatus() {
             $('#panel-content').html(html);
 
             if (status.hevc == 'on') {
-                setOsdTimeoutInterval(50);
-                setLiveviewTimeoutInterval(50);
+                self.osd.setTimeoutInterval(50);
+                self.liveView.setTimeoutInterval(50);
             } else if (status.hevc == 'off') {
-                setOsdTimeoutInterval(50);
-                setLiveviewTimeoutInterval(50);
+                self.osd.setTimeoutInterval(50);
+                self.liveView.setTimeoutInterval(50);
             }
 
             if (typeof(Storage) !== "undefined") {
-                if (liveviewStarted == false) {
+                if (self.liveView.started == false) {
                     if (localStorage.getItem("liveview") === "hq") {
-                        startLiveview(false); // restart hq liveview
+                        self.liveView.start(false); // restart hq liveview
                     } else if (localStorage.getItem("liveview") === "lq") {
-                        startLiveview(true); // restart lq liveview
+                        self.liveView.start(true); // restart lq liveview
                     }
                 }
-                if (osdStarted == false &&
+                if (self.osd.tarted == false &&
                         localStorage.getItem("osd") === "show") {
-                    startOsd(); // restart osd
+                    self.osd.start(); // restart osd
                 }
             }
 
@@ -139,80 +154,94 @@ function getCameraStatus() {
                            ' (' + status.cameras[i].ip + ')</a></li>';
             }
             $('#cameras').html(cameras);
-            //debug(status.cameras[0].ip + status.cameras[0].packet);
-            if (modalEnabled == true) {
+            if (self.modalEnabled == true) {
                 $('#disconnectedModal').modal('hide');
-                modalEnabled = false;
+                self.modalEnabled = false;
             }
         },
         error: function (request, status, error) {
-            if (modalEnabled == false) {
+            if (self.modalEnabled == false) {
                 $('#disconnectedModal').modal('show');
-                modalEnabled = true;
+                self.modalEnabled = true;
             }
         }
     });
 }
 
-function controlLcd(state) {
+NxRemoteController.prototype.controlLcd = function (state) {
+    var self = this;
     $.ajax({
-        url: '/api/v1/lcd/' + state,
+        url: self.createUrl('/api/v1/lcd/' + state),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function shutterSetSilent(silent) {
+NxRemoteController.prototype.shutterSetSilent = function (silent) {
+    var self = this;
     $.ajax({
-        url: '/api/v1/shutter/' + (silent ? 'silent' : 'normal'),
+        url: self.createUrl('/api/v1/shutter/' + (silent ? 'silent' : 'normal')),
+        mimeType: 'text/html',
         success: function(data) {
         }
     });
 }
 
-function debug(str) {
-    $('#debug').html(str);
-}
-
-function ledSet(on) {
+NxRemoteController.prototype.ledSet = function (on) {
+    var self = this;
     $.ajax({
-        url: '/api/v1/led/' + (on ? "on" : "off"),
+        url: self.createUrl('/api/v1/led/' + (on ? "on" : "off")),
+        mimeType: 'text/html',
+        success: function(data) {
+        }
     });
 }
 
-function ledBlink() {
+NxRemoteController.prototype.ledBlink = function () {
+    var self = this;
     for (var ms = 0; ms < 2000; ms += 200) {
         setTimeout(function () {
-            ledSet(true);
+            self.ledSet(true);
         }, ms);
         setTimeout(function () {
-            ledSet(false);
+            self.ledSet(false);
         }, ms + 100);
     }
 }
 
-function setupRemoteController() {
-    getCameraInfo();
-    setupOsdInput();
-    setupInput();
+NxRemoteController.prototype.setup = function () {
+    var self = this;
 
-    controlLcd('on');
-    setInterval(getCameraStatus, 1000);
+    this.getCameraInfo();
+
+    this.liveView = new LiveView(this);
+
+    this.osd = new Osd(this);
+    this.osd.setup();
+
+    this.input = new Input(this);
+    this.input.setup();
+
+    this.controlLcd('on');
+    setInterval(function () {
+        self.getCameraStatus();
+    }, 1000);
 
     if (typeof(Storage) !== "undefined") {
         if (localStorage.getItem("liveview") === "lq") {
-            startLiveview(true);
+            this.liveView.start(true);
         } else if (localStorage.getItem("liveview") === "hq") {
-            startLiveview(false);
+            this.liveView.start(false);
         }
     }
     if (typeof(Storage) !== "undefined") {
         if (localStorage.getItem("osd") === "show") {
-            startOsd();
+            this.osd.start();
         }
     }
 
-    ledBlink();
+    this.ledBlink();
 }
 
 function showAndroidToast(msg) {

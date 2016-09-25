@@ -13,6 +13,20 @@
   <script src="osd.js"></script>
   <script src="main.js"></script>
   <script>
+    var nxRemoteController = null;
+    $(document).ready(function () {
+        console.log("location.domain = " + document.location.domain);
+        console.log("location.hostname = " + document.location.hostname);
+        if (document.location.hostname == '' ||
+            document.location.hostname == 'localhost' ||
+            document.location.hostname == '127.0.0.1') {
+            var hostname = prompt("Enter ip address of your camera", '');
+            nxRemoteController = new NxRemoteController(hostname);
+        } else {
+            nxRemoteController = new NxRemoteController();
+        }
+        nxRemoteController.setup();
+    });
   </script>
   <style>
     @media (max-width: 768px) {
@@ -108,7 +122,7 @@
   </style>
 
 </head>
-<body class="alt-grid" onload="setupRemoteController();">
+<body class="alt-grid">
 <nav class="navbar navbar-inverse navbar-fixed-top"
      style="padding-left:15px; padding-right:15px">
   <div class="container-fluid">
@@ -127,11 +141,11 @@
             LiveView<span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
-            <li><a href="#" onclick="stopLiveview(); startLiveview(false);">
+            <li><a href="#" onclick="nxRemoteController.liveView.stop(); nxRemoteController.liveView.start(false);">
               Show (HQ)</a></li>
-            <li><a href="#" onclick="stopLiveview(); startLiveview(true);">
+            <li><a href="#" onclick="nxRemoteController.liveView.stop(); nxRemoteController.liveView.start(true);">
               Show (LQ)</a></li>
-            <li><a href="#" onclick="stopLiveview();">
+            <li><a href="#" onclick="nxRemoteController.liveView.stop();">
               Hide</a></li>
           </ul>
         </li>
@@ -140,8 +154,8 @@
             OSD<span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
-            <li><a href="#" onclick="startOsd();">Show</a></li>
-            <li><a href="#" onclick="stopOsd();">Hide</a></li>
+            <li><a href="#" onclick="nxRemoteController.osd.start();">Show</a></li>
+            <li><a href="#" onclick="nxRemoteController.osd.stop();">Hide</a></li>
           </ul>
         </li>
         <li class="dropdown">
@@ -149,9 +163,9 @@
             LCD<span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
-            <li><a href="#" onclick="controlLcd('on');">On</a></li>
-            <li><a href="#" onclick="controlLcd('off');">Off</a></li>
-            <li class="nx1-nx500-only"><a href="#" onclick="controlLcd('video');">Video Only</a></li>
+            <li><a href="#" onclick="nxRemoteController.controlLcd('on');">On</a></li>
+            <li><a href="#" onclick="nxRemoteController.controlLcd('off');">Off</a></li>
+            <li class="nx1-nx500-only"><a href="#" onclick="nxRemoteController.controlLcd('video');">Video Only</a></li>
           </ul>
         </li>
         <li class="dropdown nx500-only">
@@ -159,8 +173,8 @@
             Shutter<span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
-            <li><a href="#" onclick="shutterSetSilent(true);">Silent</a></li>
-            <li><a href="#" onclick="shutterSetSilent(false);">Normal</a></li>
+            <li><a href="#" onclick="nxRemoteController.shutterSetSilent(true);">Silent</a></li>
+            <li><a href="#" onclick="nxRemoteController.shutterSetSilent(false);">Normal</a></li>
           </ul>
         </li>
         <li class="dropdown nx1-only">
@@ -168,10 +182,10 @@
             Quick <span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
-            <li onclick="onKey('AF_MODE')"><a href="#">AF Mode</a></li>
-            <li onclick="onKey('ISO')"><a href="#">ISO</a></li>
-            <li onclick="onKey('WB')"><a href="#">White Balance</a></li>
-            <li onclick="onKey('METER')"><a href="#">Metering</a></li>
+            <li onclick="nxRemoteController.input.onKey('AF_MODE')"><a href="#">AF Mode</a></li>
+            <li onclick="nxRemoteController.input.onKey('ISO')"><a href="#">ISO</a></li>
+            <li onclick="nxRemoteController.input.onKey('WB')"><a href="#">White Balance</a></li>
+            <li onclick="nxRemoteController.input.onKey('METER')"><a href="#">Metering</a></li>
           </ul>
         </li>
 
@@ -180,11 +194,11 @@
             Drive <span class="caret"></span>
           </a>
           <ul class="dropdown-menu">
-            <li onclick="onKey('DRIVE_SINGLE');"><a href="#">Single</a></li>
-            <li onclick="onKey('DRIVE_CONTI_N');"><a href="#">Continuous Normal</a></li>
-            <li onclick="onKey('DRIVE_CONTI_H');"><a href="#">Continuous High</a></li>
-            <li onclick="onKey('DRIVE_TIMER');"><a href="#">Timer</a></li>
-            <li onclick="onKey('DRIVE_BRACKET');"><a href="#">Bracket</a></li>
+            <li onclick="nxRemoteController.input.onKey('DRIVE_SINGLE');"><a href="#">Single</a></li>
+            <li onclick="nxRemoteController.input.onKey('DRIVE_CONTI_N');"><a href="#">Continuous Normal</a></li>
+            <li onclick="nxRemoteController.input.onKey('DRIVE_CONTI_H');"><a href="#">Continuous High</a></li>
+            <li onclick="nxRemoteController.input.onKey('DRIVE_TIMER');"><a href="#">Timer</a></li>
+            <li onclick="nxRemoteController.input.onKey('DRIVE_BRACKET');"><a href="#">Bracket</a></li>
           </ul>
         </li>
       </ul>
@@ -242,22 +256,22 @@
                 id="button-ev">EV</button>
         <button class="btn btn-info btn-responsive round"
                 style="width:13%; padding-left:4px; padding-right:4px"
-                onclick="onKey('AEL');">AEL</button>
+                onclick="nxRemoteController.input.onKey('AEL');">AEL</button>
         <span class="btn-group" style="width:25%">
           <button class="btn btn-primary btn-responsive round"
                   style="width:50%"
-                  onclick="onKey('JOG1_CCW');">&lt;&lt;&lt;</button>
+                  onclick="nxRemoteController.input.onKey('JOG1_CCW');">&lt;&lt;&lt;</button>
           <button class="btn btn-primary btn-responsive round"
                   style="width:50%"
-                  onclick="onKey('JOG1_CW');">&gt;&gt;&gt;</button>
+                  onclick="nxRemoteController.input.onKey('JOG1_CW');">&gt;&gt;&gt;</button>
         </span>
         <span class="btn-group" style="width:25%">
           <button class="btn btn-primary btn-responsive round"
                   style="width:50%"
-                  onclick="onKey('JOG_CCW');">&lt;&lt;&lt;</button>
+                  onclick="nxRemoteController.input.onKey('JOG_CCW');">&lt;&lt;&lt;</button>
           <button class="btn btn-primary btn-responsive round"
                   style="width:50%"
-                  onclick="onKey('JOG_CW');">&gt;&gt;&gt;</button>
+                  onclick="nxRemoteController.input.onKey('JOG_CW');">&gt;&gt;&gt;</button>
         </span>
         <span class="dropdown" style="width:20%">
           <button class="btn btn-success btn-responsive round dropdown-toggle pull-right"
@@ -267,27 +281,27 @@
           </button>
           <ul class="dropdown-menu dropdown-menu-right list-unstyled"
               style="width:320px; margin-right:-70px">
-            <li class="col-xs-6" onclick="onKey('MODE_P');">
+            <li class="col-xs-6" onclick="nxRemoteController.input.onKey('MODE_P');">
               <a href="#">P (Program)</a></li>
-            <li class="col-xs-6" onclick="onKey('MODE_A');">
+            <li class="col-xs-6" onclick="nxRemoteController.input.onKey('MODE_A');">
               <a href="#">A (Aperture Priority)</a></li>
-            <li class="col-xs-6" onclick="onKey('MODE_S');">
+            <li class="col-xs-6" onclick="nxRemoteController.input.onKey('MODE_S');">
               <a href="#">S (Shutter Priority)</a></li>
-            <li class="col-xs-6" onclick="onKey('MODE_M');">
+            <li class="col-xs-6" onclick="nxRemoteController.input.onKey('MODE_M');">
               <a href="#">M (Manual)</a></li>
-            <li class="col-xs-6" onclick="onKey('MODE_SCENE');">
+            <li class="col-xs-6" onclick="nxRemoteController.input.onKey('MODE_SCENE');">
               <a href="#">Scene</a></li>
-            <li class="col-xs-6" onclick="onKey('MODE_SMART');">
+            <li class="col-xs-6" onclick="nxRemoteController.input.onKey('MODE_SMART');">
               <a href="#">Auto</a></li>
-            <li class="col-xs-6 nx1-nx500-only" onclick="onKey('MODE_CUSTOM1');">
+            <li class="col-xs-6 nx1-nx500-only" onclick="nxRemoteController.input.onKey('MODE_CUSTOM1');">
               <a href="#">Custom Mode 1</a></li>
-            <li class="col-xs-6 nx1-nx500-only" onclick="onKey('MODE_CUSTOM2');">
+            <li class="col-xs-6 nx1-nx500-only" onclick="nxRemoteController.input.onKey('MODE_CUSTOM2');">
               <a href="#">Custom Mode 2</a></li>
-            <li class="col-xs-6 nx500-only" onclick="onKey('MODE_SAS');">
+            <li class="col-xs-6 nx500-only" onclick="nxRemoteController.input.onKey('MODE_SAS');">
               <a href="#">Samsung Auto Shot</a></li>
-            <li class="col-xs-6 nx300-only" onclick="onKey('MODE_SAS');">
+            <li class="col-xs-6 nx300-only" onclick="nxRemoteController.input.onKey('MODE_SAS');">
               <a href="#">Lense Priority</a></li>
-            <li class="col-xs-6 nx300-only" onclick="onKey('MODE_WIFI');">
+            <li class="col-xs-6 nx300-only" onclick="nxRemoteController.input.onKey('MODE_WIFI');">
               <a href="#">Wi-Fi</a></li>
           </ul>
         </span>
@@ -295,16 +309,16 @@
       <div style="width:100%; margin-top: 10px">
         <button class="btn btn-primary btn-sm btn-responsive round"
                 style="width:20%; margin-bottom:2%; margin-right:7%"
-                onclick="onKey('MENU');">MENU</button>
+                onclick="nxRemoteController.input.onKey('MENU');">MENU</button>
         <button class="btn btn-info btn-sm btn-responsive top-round"
                 style="width:21%; margin-top:2%; margin-left:3%; margin-right:3%"
-                onclick="onKey('UP');">
+                onclick="nxRemoteController.input.onKey('UP');">
           <span class="glyphicon glyphicon-triangle-top"></span>
           <span>DISP</span>
         </button>
         <button class="btn btn-primary btn-sm btn-responsive round"
                 style="width:20%; margin-bottom:2%; margin-left:7%"
-                onclick="onKey('FN');">Fn</button>
+                onclick="nxRemoteController.input.onKey('FN');">Fn</button>
         <button class="btn btn-default btn-lg btn-responsive-lg pull-right"
                 style="width: 12%; margin-bottom: -20px"
                 id="button-shutter">&#9675;</button>
@@ -312,16 +326,16 @@
       <div class="btn-group" style="width:100%">
         <button class="btn btn-info btn-sm btn-responsive left-round"
                 style="width:21%; margin-left:10.3%"
-                onclick="onKey('LEFT');">
+                onclick="nxRemoteController.input.onKey('LEFT');">
           <span class="glyphicon glyphicon-triangle-left"></span>
           <span class="not-nx1-only">Drive</span></button>
         </button>
         <button class="btn btn-warning btn-sm btn-responsive sharp"
                 style="width:21%"
-                onclick="onKey('OK');">OK</button>
+                onclick="nxRemoteController.input.onKey('OK');">OK</button>
         <button class="btn btn-info btn-sm btn-responsive right-round"
                 style="width:21%"
-                onclick="onKey('RIGHT');">
+                onclick="nxRemoteController.input.onKey('RIGHT');">
           <span class="not-nx1-only">AF</span>
           <span class="glyphicon glyphicon-triangle-right"></span>
         </button>
@@ -329,23 +343,23 @@
       <div style="width:100%; margin-bottom: 10px">
         <button class="btn btn-primary btn-sm btn-responsive round"
                 style="width:20%; margin-top: 2%; margin-right:7%"
-                onclick="onKey('PB');">
+                onclick="nxRemoteController.input.onKey('PB');">
           <span class="glyphicon glyphicon-expand"></span>
         </button>
         <button class="btn btn-info btn-sm btn-responsive bottom-round"
                 style="width:21%; margin-bottom: 2%; margin-left:3%; margin-right:3%"
-                onclick="onKey('DOWN');">
+                onclick="nxRemoteController.input.onKey('DOWN');">
           <span class="glyphicon glyphicon-triangle-bottom"></span>
           <span class="not-nx1-only">ISO</span></button>
         </button>
         <button class="btn btn-primary btn-sm btn-responsive round"
                 style="width:20%; margin-top: 2%; margin-left:7%"
-                onclick="onKey('DEL');">
+                onclick="nxRemoteController.input.onKey('DEL');">
           <span class="glyphicon glyphicon-trash"></span>
         </button>
         <button class="btn btn-danger btn-lg btn-responsive-lg pull-right"
                 style="width: 12%; border-radius: 50%"
-                onclick="onKey('REC');">&#9679;</button>
+                onclick="nxRemoteController.input.onKey('REC');">&#9679;</button>
       </div>
       <div class="panel panel-primary">
         <div class="panel-body">
@@ -355,9 +369,6 @@
     </div>
 
   </div>
-    <div class="col-sm-4">
-      <p id="debug"></p>
-    </div>
 
   <!-- Modal -->
   <div id="disconnectedModal" class="modal fade" role="dialog">

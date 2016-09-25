@@ -149,7 +149,10 @@ void liveview_http_send(struct mg_connection *nc,
     long long end_time;
 
     if (is_nx1() && osd_is_evf()) {
-        mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
+        mg_printf(nc, "HTTP/1.1 200 OK\r\n"
+                      "Access-Control-Allow-Origin: *\r\n"
+                      "Access-Control-Allow-Headers: X-Requested-With\r\n"
+                      "Content-Length: %d\r\n"
                       "Content-Type: text/plain; charset=x-user-defined\r\n"
                       "\r\n", 0);
         return;
@@ -163,6 +166,8 @@ void liveview_http_send(struct mg_connection *nc,
         }
 
         mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
+                      "Access-Control-Allow-Origin: *\r\n"
+                      "Access-Control-Allow-Headers: X-Requested-With\r\n"
                       "Content-Type: text/plain; charset=x-user-defined\r\n"
                       "\r\n", frame_size);
         if (reduce_size) {
@@ -173,7 +178,10 @@ void liveview_http_send(struct mg_connection *nc,
             mg_send(nc, s_nv12_mem, frame_size);
         }
     } else {
-        mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\n"
+        mg_printf(nc, "HTTP/1.1 200 OK\r\n"
+                      "Access-Control-Allow-Origin: *\r\n"
+                      "Access-Control-Allow-Headers: X-Requested-With\r\n"
+                       "Content-Length: %d\r\n"
                       "Content-Type: text/plain; charset=x-user-defined\r\n"
                       "\r\n", 0);
     }
