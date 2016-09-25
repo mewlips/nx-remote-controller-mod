@@ -6,7 +6,7 @@ INSTALL_LOG_PATH=/opt/storage/sdcard/$INSTALL_LOG
 TOOLS_PATH=/opt/usr/apps/nx-remote-controller-mod/tools
 
 blink() {
-    while [ -f /opt/storage/sdcard/nx-on-wake/on-wake ]; do
+    while [ -f /opt/storage/sdcard/install.sh ]; do
         echo 1 > /sys/devices/platform/leds-gpio/leds/card/brightness
         sleep 0.5
         echo 0 > /sys/devices/platform/leds-gpio/leds/card/brightness
@@ -23,9 +23,17 @@ sleep 1
 $INSTALL_PATH/install.sh &> $INSTALL_LOG_PATH
 result=$?
 
-if [ -f /opt/storage/sdcard/nx-on-wake/on-wake ]; then
-    rm -f /opt/storage/sdcard/nx-on-wake/on-wake
+if [ -f /opt/storage/sdcard/install.sh ]; then
+    rm -f /opt/storage/sdcard/install.sh
 fi
+if [ -f /opt/storage/sdcard/info.tg ]; then
+    rm -f /opt/storage/sdcard/info.tg
+fi
+if [ -f /opt/storage/sdcard/nx_cs.adj ]; then
+    rm -f /opt/storage/sdcard/nx_cs.adj
+fi
+
+killall dfmsd
 
 sync;sync;sync;
 

@@ -10,7 +10,12 @@ confirm_dialog() {
 
 if confirm_dialog; then
     $APP_PATH/off_nx-remote-controller-daemon.sh
-    rm -f /opt/usr/nx-on-wake/auto/nx-remote-controller-daemon.sh
+    if [ -f /opt/usr/nx-on-wake/auto/nx-remote-controller-daemon.sh ]; then
+        rm -f /opt/usr/nx-on-wake/auto/nx-remote-controller-daemon.sh
+    fi
+    if [ -f /opt/home/scripts/auto/nx-remote-controller-daemon.sh ]; then
+        rm -f /opt/home/scripts/auto/nx-remote-controller-daemon.sh
+    fi
     rm -rf $APP_PATH
     sync; sync; sync
 fi

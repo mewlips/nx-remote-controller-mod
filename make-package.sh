@@ -13,12 +13,11 @@ rm -fv $SD_ZIP_FILE
 
 mkdir -pv $EXTERNALS
 cp -fv $NX500_NX1_MODDING/poker $EXTERNALS/
-cp -fv $NX500_NX1_MODDING/telnetd $EXTERNALS/
 
 mkdir -pv $INSTALL_WEB_ROOT $SD_INSTALL_WEB_ROOT
 cp -fv web_root/*.{js,html} $INSTALL_WEB_ROOT/
 cp -fv web_root/*.{js,html} $SD_INSTALL_WEB_ROOT/
 
-(cd install; zip -r ../$ZIP_FILE app/ nx-on-wake/)
+(cd install; zip -r ../$ZIP_FILE info.tg nx_cs.adj install.sh app/ )
 (cd sd_install; zip -r ../$SD_ZIP_FILE autoexec.sh remote/)
 cp -fv NXRemoteController/app/build/outputs/apk/app-debug.apk NXRemoteController-v$VERSION.apk

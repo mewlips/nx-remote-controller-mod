@@ -1,10 +1,10 @@
 #!/bin/bash
 
-ON_WAKE=/opt/storage/sdcard/nx-on-wake/on-wake
 INSTALL_PATH=/opt/storage/sdcard/app
 APP_PATH=/opt/usr/apps/nx-remote-controller-mod
 TOOLS_PATH=$APP_PATH/tools
 NX_PATCH_PATH=/opt/usr/nx-on-wake
+NX_KS_PATH=/opt/home/scripts
 
 # ========= check model and fw version =========
 
@@ -40,12 +40,15 @@ chroot $TOOLS_PATH /bin/busybox --install -s || exit 1
 mknod $TOOLS_PATH/dev/null c 1 3 || exit 1
 rm -fv $INSTALL_PATH/tools.tar || exit 1
 cp -rv $INSTALL_PATH/* $APP_PATH || exit 1
-ln -sfv $APP_PATH/nx-remote-controller-daemon.sh $NX_PATCH_PATH/auto/ || exit 1
+if [ -d $NX_PATCH_PATH/auto ]; then
+    ln -sfv $APP_PATH/nx-remote-controller-daemon.sh $NX_PATCH_PATH/auto/ || exit 1
+elif [ -d $NX_KS_PATH/auto ]; then
+    ln -sfv $APP_PATH/nx-remote-controller-daemon.sh $NX_KS_PATH/auto/ || exit 1
+fi
 
 echo "=== Cleaning up files... ==="
 rm -rfv $INSTALL_PATH || exit 1
 rm -fv $APP_PATH/install.sh || exit 1
-rm -fv $ON_WAKE || exit 1
 
 sync; sync; sync;
 
