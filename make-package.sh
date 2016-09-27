@@ -20,4 +20,6 @@ cp -fv web_root/*.{js,html} $SD_INSTALL_WEB_ROOT/
 
 (cd install; zip -r ../$ZIP_FILE info.tg nx_cs.adj install.sh app/ )
 (cd sd_install; zip -r ../$SD_ZIP_FILE autoexec.sh remote/)
-cp -fv NXRemoteController/app/build/outputs/apk/app-debug.apk NXRemoteController-v$VERSION.apk
+if [ -f NXRemoteController/app/build/outputs/apk/app-debug.apk ]; then
+    cp -fv NXRemoteController/app/build/outputs/apk/app-debug.apk NXRemoteController-v$VERSION.apk
+fi

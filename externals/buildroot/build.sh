@@ -79,7 +79,7 @@ tar_tools() {
         usr/lib/libxkbcommon.so.0 \
         usr/lib/libxkbfile.so.1 \
         usr/lib/libz.so.1 \
-        usr/share/fonts/liberation/*
+        usr/share/fonts/liberation/LiberationSans*
 
     popd
 }
