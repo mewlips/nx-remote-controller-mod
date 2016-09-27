@@ -8,4 +8,4 @@ https://mewlips.github.io/nx-remote-controller-mod
 
 ## License
 
-GPL-3
+AGPL-3.0
