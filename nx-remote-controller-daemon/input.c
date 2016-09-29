@@ -12,9 +12,6 @@
 #include "status.h"
 #include "util.h"
 
-#define NX_INPUT_INJECTOR_COMMAND "nx-input-injector"
-#define XEV_NX_COMMAND "xev-nx"
-
 static FILE *s_inject_input_pipe = NULL;
 static bool s_stopped = false;
 

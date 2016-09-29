@@ -29,4 +29,5 @@ arm-none-linux-gnueabi-gcc \
         status.c \
         util.c \
     && cp -fv nx-remote-controller-daemon ../install/app/ \
-    && cp -fv nx-remote-controller-daemon ../sd_install/remote/
+    && cp -fv nx-remote-controller-daemon ../sd_install/remote/ \
+    && cp -fv nx-remote-controller-daemon ../nx-ks2/nx-rc/

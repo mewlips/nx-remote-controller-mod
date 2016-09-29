@@ -84,6 +84,47 @@ tar_tools() {
     popd
 }
 
+copy_tools_for_nx_ks2() {
+    pushd output/target
+    mkdir -p ../../../../../nx-ks2/nx-rc/tools/{usr/bin,lib/,usr/lib}
+    for f in \
+        usr/bin/convert \
+        usr/bin/nx-input-injector \
+        usr/bin/xdotool \
+        usr/bin/xev-nx \
+        lib/ld-linux.so.3 \
+        lib/libc.so.6 \
+        lib/libdl.so.2 \
+        lib/libgcc_s.so.1 \
+        lib/libm.so.6 \
+        lib/libpthread.so.0 \
+        lib/librt.so.1 \
+        usr/lib/libMagickCore-6.Q16.so.2 \
+        usr/lib/libMagickWand-6.Q16.so.2 \
+        usr/lib/libX11.so.6 \
+        usr/lib/libXau.so.6 \
+        usr/lib/libXdmcp.so.6 \
+        usr/lib/libXext.so.6 \
+        usr/lib/libXi.so.6 \
+        usr/lib/libXinerama.so.1 \
+        usr/lib/libXrandr.so.2 \
+        usr/lib/libXrender.so.1 \
+        usr/lib/libXtst.so.6 \
+        usr/lib/libexpat.so.1 \
+        usr/lib/libfontconfig.so.1 \
+        usr/lib/libfreetype.so.6 \
+        usr/lib/libjpeg.so.8 \
+        usr/lib/libpng16.so.16 \
+        usr/lib/libxcb.so.1 \
+        usr/lib/libxdo.so.3 \
+        usr/lib/libxkbcommon.so.0 \
+        usr/lib/libz.so.1; do
+        cp -Lv $f ../../../../../nx-ks2/nx-rc/tools/$f
+    done
+
+    popd
+}
+
 wget -c https://buildroot.org/downloads/$TARBALL
 
 if [ -f $TARBALL ] && [ ! -d $BUILDROOT_DIR ]; then
@@ -97,6 +138,7 @@ fi
 
 cp -fv nx_remote_controller_mod_defconfig $BUILDROOT_DIR/configs
 cd $BUILDROOT_DIR
-make nx_remote_controller_mod_defconfig && make && tar_tools && \
+make nx_remote_controller_mod_defconfig && make && \
+    tar_tools && copy_tools_for_nx_ks2 && \
     mkdir -p ../../../sd_install/remote/tools && \
     tar -C ../../../sd_install/remote/tools -xf ../../../install/app/tools.tar

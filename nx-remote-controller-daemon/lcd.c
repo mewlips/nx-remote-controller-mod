@@ -2,9 +2,8 @@
 
 #include "command.h"
 #include "lcd.h"
+#include "nx_model.h"
 #include "util.h"
-
-#define LCD_CONTROL_SH_COMMAND "lcd_control.sh"
 
 static LcdState s_lcd_state;
 
@@ -28,7 +27,21 @@ void lcd_set_state(LcdState state)
             break;
     }
     if (state_str != NULL) {
-        systemf("%s/%s %s", get_app_path(), LCD_CONTROL_SH_COMMAND, state_str);
+        if (is_old_nx_model()) {
+            systemf("%s/%s %s", get_app_path(), LCD_CONTROL_SH_COMMAND, state_str);
+        } else {
+            systemf("kill $(ps ax | grep 'xev-nx -.. -bi' | grep -v grep | awk '{print $1}')");
+            if (state == LCD_OFF || state == LCD_VIDEO) {
+                systemf("%s %s %s -bi %lu &",
+                        get_chroot_command(), XEV_NX_COMMAND,
+                        state == LCD_OFF ? "-rv" : "-tr",
+                        get_di_camera_app_window_id());
+            }
+            systemf("%s %s %s %lu",
+                    get_chroot_command(), XDOTOOL_COMMAND,
+                    state == LCD_VIDEO ? "windowunmap" : "windowmap",
+                    get_di_camera_app_window_id());
+        }
     } else {
         print_log("unknown state. %d", state);
     }
