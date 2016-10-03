@@ -11,6 +11,7 @@
 int main(int argc, char **argv)
 {
     const char *ip_addr;
+    bool result;
 
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, SIG_IGN);
@@ -32,12 +33,15 @@ int main(int argc, char **argv)
         network_broadcast_discovery_packet(PORT_UDP_BROADCAST);
         network_receive_discovery_packet(PORT_UDP_BROADCAST);
 
-        api_server_run();
+        result = api_server_run();
 
         liveview_destroy();
         osd_destroy();
         network_destroy();
 
+        if (result == false) {
+            break;
+        }
         // wait for threads terimantion
         sleep(3);
     }

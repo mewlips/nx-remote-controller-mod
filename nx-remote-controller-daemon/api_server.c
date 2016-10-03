@@ -246,7 +246,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p)
     }
 }
 
-void api_server_run(void)
+bool api_server_run(void)
 {
     char web_root[256];
     struct mg_mgr mgr;
@@ -260,6 +260,11 @@ void api_server_run(void)
     s_http_server_opts.enable_directory_listing = "yes";
 
     nc = mg_bind(&mgr, s_http_port, ev_handler);
+    if (nc == NULL) {
+        print_error("mg_bind() failed!");
+        mg_mgr_free(&mgr);
+        return false;
+    }
     mg_set_protocol_http_websocket(nc);
 
     print_log("Starting threaded server on port %s", s_http_port);
@@ -273,4 +278,6 @@ void api_server_run(void)
     }
 
     mg_mgr_free(&mgr);
+
+    return true;
 }
