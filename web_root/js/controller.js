@@ -1,33 +1,50 @@
-function NxRemoteController(hostname, target) {
+function NxRemoteController(hostname) {
     this.hostname = hostname;
-    this.urlPrefix = '';
-    this.target = $('#cameraScreen');
-    this.isMainController = false;
-
-    if (this.hostname != null) {
-        this.urlPrefix = 'http://' + hostname; 
-    } else {
-        this.hostname = document.location.hostname;
-    }
-    if (target != null) {
-        this.target = target;
-    } else {
-        this.isMainController = true;
-    }
-
-    this.nxModelName = "";
+    this.viewFinder = null;
+    this.urlPrefix = 'http://' + hostname; 
+    this.nxModelName = "NX1"; // FIXME: fallback
     this.nxFwVer = "";
+    this.macAddress = "";
     this.modalEnabled = false;
-    this.keepAliveTimer = null;
     this.liveView = null;
     this.osd = null;
-    this.input = null;
+    this.mouseInput = null;
+    this.statusTimer = null;
+    this.settings = null;
 
     this.init();
 }
 
 NxRemoteController.prototype.createUrl = function (path) {
     return this.urlPrefix + path;
+}
+
+NxRemoteController.prototype.setVisibility = function () {
+    if (this.isNx1()) {
+        this.viewFinder.panel.target.find('.nx1-only').show();
+    } else {
+        this.viewFinder.panel.target.find('.nx1-only').hide();
+    }
+    if (this.isNx500()) {
+        this.viewFinder.panel.target.find('.nx500-only').show();
+    } else {
+        this.viewFinder.panel.target.find('.nx500-only').hide();
+    }
+    if (this.isNx1() || this.isNx500()) {
+        this.viewFinder.panel.target.find('.nx1-nx500-only').show();
+    } else {
+        this.viewFinder.panel.target.find('.nx1-nx500-only').hide();
+    }
+    if (this.isNx300()) {
+        this.viewFinder.panel.target.find('.nx300-only').show();
+    } else {
+        this.viewFinder.panel.target.find('.nx300-only').hide();
+    }
+    if (!this.isNx1()) {
+        this.viewFinder.panel.target.find('.not-nx1-only').show();
+    } else {
+        this.viewFinder.panel.target.find('.not-nx1-only').hide();
+    }
 }
 
 NxRemoteController.prototype.getCameraInfo = function () {
@@ -37,44 +54,26 @@ NxRemoteController.prototype.getCameraInfo = function () {
         success: function (info) {
             self.nxModelName = info.model;
             self.nxFwVer = info.fw_ver;
+            self.macAddress = info.mac_address;
 
             var text = 'NX Remote Controller ' +
                        '[ ' + info.model + ' (fw ' + info.fw_ver + ')]';
             document.title = text;
 
-            if (self.isNx1()) {
-                $('.nx1-only').show();
-            } else {
-                $('.nx1-only').hide();
-            }
-            if (self.isNx500()) {
-                $('.nx500-only').show();
-            } else {
-                $('.nx500-only').hide();
-            }
-            if (self.isNx1() || self.isNx500()) {
-                $('.nx1-nx500-only').show();
-            } else {
-                $('.nx1-nx500-only').hide();
-            }
-            if (self.isNx300()) {
-                $('.nx300-only').show();
-            } else {
-                $('.nx300-only').hide();
-            }
-            if (!self.isNx1()) {
-                $('.not-nx1-only').show();
-            } else {
-                $('.not-nx1-only').hide();
-            }
+            self.settings = new Settings(self.macAddress);
+            self.viewFinder = new ViewFinder(self);
+            self.osd = new Osd(self);
+            self.liveView = new LiveView(self);
+            self.mouseInput = new MouseInput(self);
 
-            if (self.keepAliveTimer) {
-                clearInterval(self.keepAliveTimer);
-            }
-            self.input.injectKeepAlive();
-            self.keepAliveTimer = setInterval(function () {
-                self.input.injectKeepAlive();
-            }, 25*1000);
+            self.setVisibility();
+            self.controlLcd('on');
+            self.statusTimer = setInterval(function () {
+                self.getCameraStatus();
+            }, 1000);
+
+            app.controlPanel.updateTitle();
+            app.controlPanel.setVisibility();
         }
     });
 }
@@ -91,13 +90,42 @@ NxRemoteController.prototype.isNx300 = function () {
     return this.nxModelName == 'NX300';
 }
 
+NxRemoteController.prototype.restartScreen = function () {
+    var self = this;
+
+    if (self.liveView != null && self.liveView.started == false) {
+        var value = this.settings.getLiveView();
+        if (value === "hq") {
+            self.liveView.start(false); // restart hq liveview
+        } else if (value === "lq") {
+            self.liveView.start(true); // restart lq liveview
+        } else if (value === "hide") {
+            self.liveView.stop();
+        }
+    }
+    if (self.osd != null && self.osd.started == false) {
+        var value = this.settings.getOsd();
+        if (value === "show") {
+            self.osd.start(); // restart osd
+        } else if (value === "hide") {
+            self.osd.stop();
+        }
+    }
+}
+
 NxRemoteController.prototype.getCameraStatus = function () {
     var self = this;
     $.ajax({
         url: self.createUrl('/api/v1/camera/status'),
-        timeout: 1000,
+        timeout: 3000,
         success: function(status) {
-            var html = '';
+            var title = $('<span></span>')
+                .click(function () {
+                    self.ledBlink();
+
+                });
+            var html = '&nbsp;' + self.nxModelName + ' / ' +
+                       self.hostname + ' / ';
             if (self.isNx1()) {
                 var batteryIcon;
                 if (status.battery_percent > 75) {
@@ -136,40 +164,44 @@ NxRemoteController.prototype.getCameraStatus = function () {
 
             html += ' / Mode: ' + status.mode;
 
-            $('#panel-content').html(html);
+            self.viewFinder.panel.setTitle(title.html(html));
 
             if (status.hevc == 'on') {
-                self.osd.setTimeoutInterval(50);
-                self.liveView.setTimeoutInterval(50);
+                if (self.osd != null) {
+                    self.osd.setTimeoutInterval(500);
+                }
+                if (self.liveView != null) {
+                    self.liveView.setTimeoutInterval(500);
+                }
+                if (Settings.getScreenOffOnRecord()) {
+                    self.stopScreen();
+                }
             } else if (status.hevc == 'off') {
-                self.osd.setTimeoutInterval(50);
-                self.liveView.setTimeoutInterval(50);
-            }
-
-            if (typeof(Storage) !== "undefined") {
-                if (self.liveView.started == false) {
-                    if (localStorage.getItem("liveview") === "hq") {
-                        self.liveView.start(false); // restart hq liveview
-                    } else if (localStorage.getItem("liveview") === "lq") {
-                        self.liveView.start(true); // restart lq liveview
-                    }
+                if (self.osd != null) {
+                    self.osd.setTimeoutInterval(50);
                 }
-                if (self.osd.tarted == false &&
-                        localStorage.getItem("osd") === "show") {
-                    self.osd.start(); // restart osd
+                if (self.liveView != null) {
+                    self.liveView.setTimeoutInterval(50);
                 }
             }
 
-            var cameras = "";
+            if (!self.viewFinder.panel.isCollapsed()
+                    && app.getActiveTab() == '#controller') {
+                if (status.hevc != 'on') {
+                    self.restartScreen();
+                } else if (!Settings.getScreenOffOnRecord()) {
+                    self.restartScreen();
+                }
+            }
+
             for (var i = 0; i < status.cameras.length; i++) {
                 var ip = status.cameras[i].ip;
                 var model = status.cameras[i].packet.split('|')[2];
                 status.cameras[i].model = model;
-                cameras += '<li><a href="http://' + ip + '">' + model +
-                           ' (' + status.cameras[i].ip + ')</a></li>';
-                //app.viewfinder.setCameras(status.cameras);
+                status.cameras[i].macAddress =
+                    status.cameras[i].packet.split('|')[4];
+                app.setCameras(status.cameras);
             }
-            $('#cameras').html(cameras);
             if (self.modalEnabled == true) {
                 $('#disconnectedModal').modal('hide');
                 self.modalEnabled = false;
@@ -177,8 +209,21 @@ NxRemoteController.prototype.getCameraStatus = function () {
         },
         error: function (request, status, error) {
             if (self.modalEnabled == false) {
+                var name = self.settings.getName();
+                if (name == '') {
+                    name = self.hostname;
+                }
+                $('#disconnectedModalBody')
+                    .html($('<p></p>').append(name + ' is disconnected.'));
                 $('#disconnectedModal').modal('show');
                 self.modalEnabled = true;
+                setTimeout(function() {
+                    if (self.modalEnabled) {
+                        app.removeController(self.hostname);
+                        $('#disconnectedModal').modal('hide');
+                        self.modalEnabled = false;
+                    }
+                }, 5000); // wait 5 second;
             }
         }
     });
@@ -216,13 +261,13 @@ NxRemoteController.prototype.ledSet = function (on) {
 
 NxRemoteController.prototype.ledBlink = function () {
     var self = this;
-    for (var ms = 0; ms < 2000; ms += 200) {
+    for (var ms = 0; ms < 2000; ms += 500) {
         setTimeout(function () {
             self.ledSet(true);
         }, ms);
         setTimeout(function () {
             self.ledSet(false);
-        }, ms + 100);
+        }, ms + 250);
     }
 }
 
@@ -230,31 +275,40 @@ NxRemoteController.prototype.init = function () {
     var self = this;
 
     this.getCameraInfo();
-
-    this.osd = new Osd(this);
-    this.liveView = new LiveView(this);
-    this.input = new Input(this);
-
-    this.controlLcd('on');
-
-    setInterval(function () {
-        self.getCameraStatus();
-    }, 1000);
-
-    if (typeof(Storage) !== "undefined") {
-        if (localStorage.getItem("liveview") === "lq") {
-            this.liveView.start(true);
-        } else if (localStorage.getItem("liveview") === "hq") {
-            this.liveView.start(false);
-        }
-    }
-    if (typeof(Storage) !== "undefined") {
-        if (localStorage.getItem("osd") === "show") {
-            this.osd.start();
-        }
-    }
-
     this.ledBlink();
+}
+
+NxRemoteController.prototype.stopScreen = function () {
+    if (this.osd != null) {
+        this.osd.stop();
+    }
+    if (this.liveView != null) {
+        this.liveView.stop();
+    }
+}
+
+NxRemoteController.prototype.destroy = function () {
+    this.osd.destroy();
+    this.osd = null;
+    this.liveView.destroy();
+    this.liveView = null;
+    this.mouseInput = null;
+    if (this.statusTimer != null) {
+        clearInterval(this.statusTimer);
+        this.statusTimer = null;
+    }
+    if (this.viewFinder != null) {
+        this.viewFinder.destroy();
+        this.viewFinder = null;
+    }
+}
+
+NxRemoteController.prototype.isKeyInputEnabled = function () {
+    if (this.settings != null) {
+        return this.settings.getKeyInputEnabled();
+    } else {
+        return false;
+    }
 }
 
 function showAndroidToast(msg) {

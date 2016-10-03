@@ -9,6 +9,7 @@
 static NxModel s_nx_model = NX_MODEL_UNKNOWN;
 static char s_nx_model_name[16];
 static char s_nx_model_version[16];
+static char s_mac_address[32];
 
 void nx_model_init(void)
 {
@@ -169,4 +170,32 @@ int get_num_video_addrs(void)
 size_t get_mmap_video_size(void)
 {
     return get_frame_size() + 4096;
+}
+
+const char *get_mac_address(void)
+{
+    FILE *file = NULL;;
+
+    if (s_mac_address[0] != '\0') {
+        return s_mac_address;
+    }
+
+    if (is_nx1()) {
+        file = fopen("/sys/devices/platform/dw_mmc_sdio.0/mmc_host/"
+                     "mmc2/mmc2:0002/mmc2:0002:1/net/mlan0/address", "r");
+    } else if (is_nx500()) {
+        file = fopen("/sys/devices/platform/dw_mmc_sdio.0/mmc_host/"
+                     "mmc1/mmc1:0002/mmc1:0002:1/net/mlan0/address", "r");
+    } else {
+        // TODO: NX300
+    }
+    if (file == NULL) {
+        print_error("failed to get mac address!");
+        return NULL;
+    }
+
+    if (fgets(s_mac_address, sizeof(s_mac_address), file) != NULL) {
+        s_mac_address[strlen(s_mac_address) - 1] = '\0';
+    }
+    return s_mac_address;
 }

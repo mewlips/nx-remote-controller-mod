@@ -4,23 +4,30 @@ function Osd(controller) {
     this.started = false;
     this.hashs = [];
     this.scale = 1.0;
-    this.timeoutInterval = 10;
+    this.timeout = null;
+    this.timeoutInterval = 100;
     this.target = null;
-
+    this.cvs = null;
+    this.ctx = null;
     this.init();
 }
 
 Osd.prototype.init = function () {
-    var osdId = this.controller.isMainController
-                    ? 'osd-main'
-                    : 'osd-' + this.controller.hostname.replace(/\./g, '-');
-    this.target = $('<canvas class="osd"></canvas>').attr('id', osdId);
-    this.controller.target.append(this.target);
+    this.target = $('<canvas class="osd"></canvas>');
+    this.controller.viewFinder.addOsdCanvas(this.target);
+    this.cvs = this.target[0];
+    this.ctx = this.cvs.getContext("2d");
 
     this.onMouseDown();
     this.onMouseMove();
     this.onMouseUp();
-    this.onWheel();
+
+    if (this.controller.isNx1() || this.controller.isNx500()) {
+        this.cvs.width = 720;
+    } else {
+        this.cvs.width = 800; // NX300
+    }
+    this.cvs.height = 480;
 
     return this;
 }
@@ -39,13 +46,12 @@ Osd.prototype.onMouseDown = function () {
             pageX = ev.originalEvent.touches[0].pageX;
             pageY = ev.originalEvent.touches[0].pageY;
         }
-        var cvs = self.target[0];
-        self.scale = cvs.width / self.controller.target.width();
+        self.scale = self.cvs.width / self.controller.viewFinder.canvasContainer.width();
         var x = Math.floor((pageX - parentOffset.left) * self.scale);
         var y = Math.floor((pageY - parentOffset.top) * self.scale);
         self.mouseDowned = true;
-        self.controller.input.onMouseMove(x, y);
-        self.controller.input.onMouseDown();
+        self.controller.mouseInput.onMouseMove(x, y);
+        self.controller.mouseInput.onMouseDown();
     }
     this.target.on('mousedown', function (ev) {
         mouseDown(ev, $(this), true);
@@ -72,7 +78,7 @@ Osd.prototype.onMouseMove = function () {
             }
             var x = Math.floor((pageX - parentOffset.left) * self.scale);
             var y = Math.floor((pageY - parentOffset.top) * self.scale);
-            self.controller.input.onMouseMove(x, y);
+            self.controller.mouseInput.onMouseMove(x, y);
         }
     }
 
@@ -88,7 +94,7 @@ Osd.prototype.onMouseUp = function () {
     var self = this;
     function mouseUp(ev, mouse) {
         ev.preventDefault();
-        self.controller.input.onMouseUp();
+        self.controller.mouseInput.onMouseUp();
         self.mouseDowned = false;
     }
 
@@ -100,18 +106,6 @@ Osd.prototype.onMouseUp = function () {
     });
     this.target.on('touchend', function (ev) {
         mouseUp(ev, false);
-    });
-}
-
-Osd.prototype.onWheel = function () {
-    var self = this;
-    this.target.bind('DOMMouseScroll mousewheel', function(e) {
-        if (e.originalEvent.wheelDelta > 0 || e.originalEvent.detail < 0) {
-            self.controller.input.onKey('UP');
-        } else {
-            self.controller.input.onKey('DOWN');
-        }
-        return false;
     });
 }
 
@@ -129,20 +123,18 @@ Osd.prototype.clearHashs = function () {
 
 Osd.prototype.getData = function () {
     var self = this;
-    var cvs = this.target[0];
-    var ctx = cvs.getContext("2d");
     var hashs_str = '';
     for (var i = 0; i < this.hashs.length; i++) {
         hashs_str += toHex(this.hashs[i]);
     }
 
     function clearOsd() {
-        imageData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+        imageData = self.ctx.getImageData(0, 0, self.cvs.width, self.cvs.height);
         buffer = imageData.data;
         for (var i = 0; i < buffer.length; i++) {
             buffer[i] = 0;
         }
-        ctx.putImageData(imageData, 0, 0);
+        self.ctx.putImageData(imageData, 0, 0);
         self.clearHashs();
     }
 
@@ -153,7 +145,10 @@ Osd.prototype.getData = function () {
         timeout: 3000,
         success: function(str) {
             if (str.length == 0) {
-                setTimeout(function () {
+                if (self.timeout != null) {
+                    clearTimeout(self.timeout);
+                }
+                self.timeout = setTimeout(function () {
                     self.getData();
                 }, self.timeoutInterval);
                 return;
@@ -173,14 +168,14 @@ Osd.prototype.getData = function () {
             var blockHeight = (data[index] & 0xff) << 8 | (data[index+1] & 0xff);
             index += 2;
 
-            if (cvs.width != frameWidth) {
-                cvs.width = frameWidth;
+            if (self.cvs.width != frameWidth) {
+                self.cvs.width = frameWidth;
             }
-            if (cvs.height != frameHeight) {
-                cvs.height = frameHeight;
+            if (self.cvs.height != frameHeight) {
+                self.cvs.height = frameHeight;
             }
 
-            var imageData = ctx.getImageData(0, 0, frameWidth, frameHeight);
+            var imageData = self.ctx.getImageData(0, 0, frameWidth, frameHeight);
             var buffer = imageData.data;
 
             for (var i = 0; i < frameWidth * frameHeight / blockWidth / blockHeight; i++) {
@@ -211,10 +206,13 @@ Osd.prototype.getData = function () {
                 }
                 index += blockWidth * blockHeight * 4;
             }
-            ctx.putImageData(imageData, 0, 0);
+            self.ctx.putImageData(imageData, 0, 0);
 
             if (self.started) {
-                setTimeout(function () {
+                if (self.timeout != null) {
+                    clearTimeout(self.timeout);
+                }
+                self.timeout = setTimeout(function () {
                     self.getData();
                 }, self.timeoutInterval);
             } else {
@@ -229,23 +227,31 @@ Osd.prototype.getData = function () {
 }
 
 Osd.prototype.start = function () {
-    if (!this.started) {
-        this.clearHashs();
-        this.started = true;
-        this.getData();
+    if (!this.controller.viewFinder.panel.isCollapsed()) {
+        if (!this.started) {
+            this.clearHashs();
+            this.started = true;
+            this.getData();
+        }
     }
-    if (typeof(Storage) !== "undefined") {
-        localStorage.setItem("osd", "show");
-    }
+    this.controller.settings.setOsd('show');
 }
 
 Osd.prototype.stop = function () {
     this.started = false;
-    if (typeof(Storage) !== "undefined") {
-        localStorage.setItem("osd", "hide");
-    }
+}
+
+Osd.prototype.setHide = function () {
+    this.controller.settings.setOsd('hide');
 }
 
 Osd.prototype.setTimeoutInterval = function (interval) {
     this.timeoutInterval = interval;
+}
+
+Osd.prototype.destroy = function () {
+    if (self.timeout != null) {
+        clearTimeout(self.timeout);
+        self.timeout = null;
+    }
 }

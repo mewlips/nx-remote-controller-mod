@@ -34,5 +34,6 @@ extern int get_default_xwin_fps(void);
 extern off_t get_video_addr(int index);
 extern int get_num_video_addrs(void);
 extern size_t get_mmap_video_size(void);
+extern const char *get_mac_address(void);
 
 #endif

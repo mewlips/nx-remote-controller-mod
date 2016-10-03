@@ -5,7 +5,7 @@ enum {
     PORT_UDP_BROADCAST = 5681,
 };
 
-#define DISCOVERY_PACKET_SIZE 32
+#define DISCOVERY_PACKET_SIZE 64
 #define MAX_NUM_CAMERAS 10
 
 typedef struct {

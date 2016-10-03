@@ -1,6 +1,7 @@
 #include <signal.h>
 
 #include "api_server.h"
+#include "gallery.h"
 #include "input.h"
 #include "liveview.h"
 #include "network.h"
@@ -29,6 +30,7 @@ int main(int argc, char **argv)
         liveview_init();
         osd_init();
         network_init();
+        gallery_init();
 
         network_broadcast_discovery_packet(PORT_UDP_BROADCAST);
         network_receive_discovery_packet(PORT_UDP_BROADCAST);

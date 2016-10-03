@@ -1,15 +1,15 @@
-function Input(controller) {
-    this.controller = controller;
+function KeyInput(controllers) {
+    this.controllers = controllers;
+    this.keepAliveTimer = null;
     this.s1Down = false;
     this.s2Down = false;
     this.evDown = false;
-    this.shutterStartX;
-    this.shutterStartY;
+    this.shutterStartY = null;
 
     this.init();
 }
 
-Input.getKeyMapping = function (key) {
+KeyInput.getKeyMapping = function (key) {
     if (key == 'UP') {
         return 'KP_Up';
     } else if (key == 'LEFT') {
@@ -135,87 +135,74 @@ Input.getKeyMapping = function (key) {
     return key;
 }
 
-Input.prototype.injectKeepAlive = function () {
-    var self = this;
-    $.ajax({
-        url: self.controller.createUrl('/api/v1/input/inject_keep_alive'),
-        mimeType: 'text/html',
-        success: function(data) {
-        }
-    });
-}
-
-Input.prototype.onKey = function (key) {
-    var self = this;
-    $.ajax({
-        url: self.controller.createUrl('/api/v1/input/inject?key=' +
-                                       Input.getKeyMapping(key)),
-        mimeType: 'text/html',
-        success: function(data) {
-        }
-    });
-}
-
-Input.prototype.onKeyDown = function (key) {
-    var self = this;
-    $.ajax({
-        url: self.controller.createUrl('/api/v1/input/inject?keydown=' +
-                                       Input.getKeyMapping(key)),
-        mimeType: 'text/html',
-        success: function(data) {
-        }
-    });
-}
-
-Input.prototype.onKeyUp = function (key) {
-    var self = this;
-    $.ajax({
-        url: self.controller.createUrl('/api/v1/input/inject?keyup=' +
-                                       Input.getKeyMapping(key)),
-        mimeType: 'text/html',
-        success: function(data) {
-        }
-    });
-}
-
-Input.prototype.onMouseDown = function () {
-    var self = this;
-    $.ajax({
-        url: self.controller.createUrl('/api/v1/input/inject?mousedown=1'),
-        mimeType: 'text/html',
-        success: function(data) {
-        }
-    });
-}
-
-Input.prototype.onMouseMove = function (x, y) {
-    var self = this;
-    if (this.controller.isNx300()) {
-        var temp = y;
-        y = x;
-        x = 480 - temp;
-        y = y;
+KeyInput.prototype.injectKeepAlive = function () {
+    var hostname = null;
+    for (hostname in this.controllers) {
+        var controller = this.controllers[hostname];
+        $.ajax({
+            url: controller.createUrl('/api/v1/input/inject_keep_alive'),
+            mimeType: 'text/html',
+            success: function(data) {
+            }
+        });
     }
-    $.ajax({
-        url: self.controller.createUrl('/api/v1/input/inject?mousemove=' + x + '-' + y),
-        mimeType: 'text/html',
-        success: function(data) {
-        }
-    });
 }
 
-Input.prototype.onMouseUp = function () {
-    var self = this;
-    $.ajax({
-        url: self.controller.createUrl('/api/v1/input/inject?mouseup=1'),
-        mimeType: 'text/html',
-        success: function(data) {
+KeyInput.prototype.onKey = function (key) {
+    var hostname = null;
+    for (hostname in this.controllers) {
+        var controller = this.controllers[hostname];
+        if (controller.isKeyInputEnabled()) {
+            $.ajax({
+                url: controller.createUrl('/api/v1/input/inject?key=' +
+                                          KeyInput.getKeyMapping(key)),
+                mimeType: 'text/html',
+                success: function(data) {
+                }
+            });
         }
-    });
+    }
 }
 
-Input.prototype.init = function () {
+KeyInput.prototype.onKeyDown = function (key) {
+    var hostname = null;
+    for (hostname in this.controllers) {
+        var controller = this.controllers[hostname];
+        if (controller.isKeyInputEnabled()) {
+            $.ajax({
+                url: controller.createUrl('/api/v1/input/inject?keydown=' +
+                                               KeyInput.getKeyMapping(key)),
+                mimeType: 'text/html',
+                success: function(data) {
+                }
+            });
+        }
+    }
+}
+
+KeyInput.prototype.onKeyUp = function (key) {
+    var hostname = null;
+    for (hostname in this.controllers) {
+        var controller = this.controllers[hostname];
+        if (controller.isKeyInputEnabled()) {
+            $.ajax({
+                url: controller.createUrl('/api/v1/input/inject?keyup=' +
+                                               KeyInput.getKeyMapping(key)),
+                mimeType: 'text/html',
+                success: function(data) {
+                }
+            });
+        }
+    }
+}
+
+KeyInput.prototype.init = function () {
     var self = this;
+
+    this.injectKeepAlive();
+    setInterval(function () {
+        self.injectKeepAlive();
+    }, 25*1000);
 
     $("#button-ev").on("click", function() {
         if (self.evDown) {
@@ -310,3 +297,9 @@ Input.prototype.init = function () {
     });
 }
 
+KeyInput.prototype.destroy = function () {
+    if (this.keepAliveTimer != null) {
+        clearInterval(this.keepAliveTimer);
+        this.keepAliveTimer = null;
+    }
+}

@@ -47,8 +47,12 @@ static void handle_camera_api(struct mg_connection *nc,
                       "Access-Control-Allow-Headers: X-Requested-With\r\n"
                       "Transfer-Encoding: chunked\r\n"
                       "Content-Type: application/json; charset=utf-8\r\n\r\n");
-        mg_printf_http_chunk(nc, "{\"model\":\"%s\",\"fw_ver\":\"%s\"}",
-                             get_nx_model_name(), get_nx_model_version());
+        mg_printf_http_chunk(nc, "{\"model\":\"%s\","
+                                  "\"fw_ver\":\"%s\","
+                                  "\"mac_address\":\"%s\"}",
+                             get_nx_model_name(),
+                             get_nx_model_version(),
+                             get_mac_address());
         mg_send_http_chunk(nc, "", 0);
     } else if (mg_vcmp(func, "status") == 0) {
         char json_cameras[1024];

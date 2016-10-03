@@ -97,7 +97,6 @@ int network_get_discovered_cameras(char *json_buffer, size_t size)
     DiscoveredCameraInfo *info;
     long long current_time = get_current_time();
 
-
     j = snprintf(json_buffer, size, "["); // start json array
 
     pthread_mutex_lock(&s_mutex);
@@ -152,9 +151,9 @@ static void *broadcast_discovery_packet_func(void *data)
     while (!s_stopped) {
         char msg[DISCOVERY_PACKET_SIZE] = {0,};
 
-        // HEADER|VERSION|MODEL|FW_VERSION|
-        snprintf(msg, sizeof(msg), "NX_REMOTE|%s|%s|%s|",
-                 VERSION, get_nx_model_name(), get_nx_model_version());
+        // HEADER|VERSION|MODEL|FW_VERSION|MAC_ADDRESS|
+        snprintf(msg, sizeof(msg), "NX_REMOTE|%s|%s|%s|%s|",
+                 VERSION, get_nx_model_name(), get_nx_model_version(), get_mac_address());
         print_log("broadcasting discovery packet... [%s]", msg);
 
         if (sendto(sock, msg, sizeof(msg), 0, (struct sockaddr *)&sin,
