@@ -87,16 +87,17 @@ App.prototype.setCameras = function (cameras) {
                 name += ' / ';
             }
             var li = $('<li></li>')
-                     .append($('<a href="#"></a>')
-                             .text(name + camera.model + ' / ' + camera.ip));
+                     .addClass('camera-list text-primary')
+                     .text(name + camera.model + ' / ' + camera.ip);
+            var ip = camera.ip;
             li.click(function () {
                 if (self.activeTab == '#controller') {
-                    location.href = 'http://' + camera.ip;
+                    location.href = 'http://' + ip;
                 } else if (self.activeTab == '#gallery') {
-                    self.gallery.init('http://' + camera.ip + '/DCIM');
+                    self.gallery.init('http://' + ip + '/DCIM');
                 }
             });
-            li[0].cameraIp = camera.ip;
+            li[0].cameraIp = ip;
             camerasMenu.append(li);
 
             if (self.controllers[camera.ip] == null) {

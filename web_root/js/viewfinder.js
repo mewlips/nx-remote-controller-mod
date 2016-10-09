@@ -148,15 +148,15 @@ ViewFinder.prototype.init = function () {
         .on('changed.bs.select',
             function (event, clickedIndex, newValue, oldValue) {
                 if (clickedIndex == 1) {
-                    self.controller.input.onKey('DRIVE_SINGLE');
+                    app.keyInput.onKey('DRIVE_SINGLE');
                 } else if (clickedIndex == 2) {
-                    self.controller.input.onKey('DRIVE_CONTI_N');
+                    app.keyInput.onKey('DRIVE_CONTI_N');
                 } else if (clickedIndex == 3) {
-                    self.controller.input.onKey('DRIVE_CONTI_H');
+                    app.keyInput.onKey('DRIVE_CONTI_H');
                 } else if (clickedIndex == 4) {
-                    self.controller.input.onKey('DRIVE_TIMER');
+                    app.keyInput.onKey('DRIVE_TIMER');
                 } else if (clickedIndex == 5) {
-                    self.controller.input.onKey('DRIVE_BRACKET');
+                    app.keyInput.onKey('DRIVE_BRACKET');
                 }
                 if (newValue == true) {
                     // force deselect
@@ -165,7 +165,7 @@ ViewFinder.prototype.init = function () {
                 }
             }
         );
-    footerRow.append($('<div class="col-xs-2"></div>')
+    footerRow.append($('<div class="col-xs-2 nx1-nx500-only"></div>')
                      .append(this.driveSelect));
     this.driveSelect.selectpicker('refresh');
 
@@ -206,13 +206,13 @@ ViewFinder.prototype.init = function () {
         .on('changed.bs.select',
             function (event, clickedIndex, newValue, oldValue) {
                 if (clickedIndex == 1) {
-                    self.controller.input.onKey('AF_MODE');
+                    app.keyInput.onKey('AF_MODE');
                 } else if (clickedIndex == 2) {
-                    self.controller.input.onKey('ISO');
+                    app.keyInput.onKey('ISO');
                 } else if (clickedIndex == 3) {
-                    self.controller.input.onKey('WB');
+                    app.keyInput.onKey('WB');
                 } else if (clickedIndex == 4) {
-                    self.controller.input.onKey('METER');
+                    app.keyInput.onKey('METER');
                 }
                 if (newValue == true) {
                     // force deselect
@@ -226,16 +226,19 @@ ViewFinder.prototype.init = function () {
     this.quickSelect.selectpicker('refresh');
 
     this.nameInput = $('<input type="text" placeholder="NAME">')
-        .addClass('name-input')
+        .addClass('form-control name-input')
         .val(this.controller.settings.getName())
         .change(function () {
             self.controller.settings.setName(this.value);
             app.controlPanel.updateTitle();
         });
-    footerRow.append($('<div class="col-xs-2"></div>')
-                     .append(this.nameInput));
-    this.driveSelect.selectpicker('refresh');
-
+    if (this.controller.isNx300()) {
+        footerRow.append($('<div class="col-xs-6"></div>')
+                         .append(this.nameInput));
+    } else {
+        footerRow.append($('<div class="col-xs-2"></div>')
+                         .append(this.nameInput));
+    }
 
     this.panel.body.on('hide.bs.collapse', function () {
         self.controller.stopScreen();

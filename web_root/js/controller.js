@@ -122,7 +122,6 @@ NxRemoteController.prototype.getCameraStatus = function () {
             var title = $('<span></span>')
                 .click(function () {
                     self.ledBlink();
-
                 });
             var html = '&nbsp;' + self.nxModelName + ' / ' +
                        self.hostname + ' / ';
@@ -209,6 +208,18 @@ NxRemoteController.prototype.getCameraStatus = function () {
         },
         error: function (request, status, error) {
             if (self.modalEnabled == false) {
+                var hostname;
+                var found = false;
+                for (hostname in app.controllers) {
+                    var controller = app.controllers[hostname];
+                    if (controller.hostname == self.hostname) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    return;
+                }
+
                 var name = self.settings.getName();
                 if (name == '') {
                     name = self.hostname;

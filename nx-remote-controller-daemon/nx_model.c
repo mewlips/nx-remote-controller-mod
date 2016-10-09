@@ -186,8 +186,9 @@ const char *get_mac_address(void)
     } else if (is_nx500()) {
         file = fopen("/sys/devices/platform/dw_mmc_sdio.0/mmc_host/"
                      "mmc1/mmc1:0002/mmc1:0002:1/net/mlan0/address", "r");
-    } else {
-        // TODO: NX300
+    } else { // NX300
+        file = fopen("/sys/devices/platform/dw_mmc_sdio.0/mmc_host/"
+                     "mmc0/mmc0:0001/mmc0:0001:1/net/wlan0/address", "r");
     }
     if (file == NULL) {
         print_error("failed to get mac address!");

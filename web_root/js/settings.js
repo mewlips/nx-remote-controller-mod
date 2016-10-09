@@ -5,7 +5,7 @@ function Settings(macAddress) {
 Settings.init = function () {
     var li = $('<li></li>')
         .append($('<a href="#"></a>')
-                .append('Screen off on record ' +
+                .append('Screen off on video recording ' +
                         '<span id="screenOffOnRecordCheck" ' +
                         '      class="glyphicon glyphicon-ok"></span>'))
         .click(function () {

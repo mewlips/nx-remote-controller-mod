@@ -5,6 +5,7 @@ VERSION=$(cat version)
 ZIP_FILE=nx-remote-controller-mod-v${VERSION}_nx1_nx500.zip
 SD_ZIP_FILE=nx-remote-controller-mod-v${VERSION}_nx300.zip
 NX_KS2_ZIP_FILE=nx-ks2_nx-rc-${VERSION}.zip
+rm -f $ZIP_FILE $SD_ZIP_FILE $NX_KS2_ZIP_FILE
 
 NX500_NX1_MODDING=externals/nx500_nx1_modding
 EXTERNALS=install/app/externals
@@ -18,10 +19,11 @@ rm -fv $SD_ZIP_FILE
 mkdir -pv $EXTERNALS
 cp -fv $NX500_NX1_MODDING/poker $EXTERNALS/
 
+rm -rf $INSTALL_WEB_ROOT $SD_INSTALL_WEB_ROOT $NX_KS2_WEB_ROOT
 mkdir -pv $INSTALL_WEB_ROOT $SD_INSTALL_WEB_ROOT $NX_KS2_WEB_ROOT
-cp -rfv web_root/{fonts,js,lib,index.html} $INSTALL_WEB_ROOT/
-cp -rfv web_root/{fonts,js,lib,index.html} $SD_INSTALL_WEB_ROOT/
-cp -rfv web_root/{fonts,js,lib,index.html} $NX_KS2_WEB_ROOT/
+cp -rfv web_root/{css,fonts,js,lib,index.html} $INSTALL_WEB_ROOT/
+cp -rfv web_root/{css,fonts,js,lib,index.html} $SD_INSTALL_WEB_ROOT/
+cp -rfv web_root/{css,fonts,js,lib,index.html} $NX_KS2_WEB_ROOT/
 
 (cd install; zip -r ../$ZIP_FILE info.tg nx_cs.adj install.sh app/ )
 (cd sd_install; zip -r ../$SD_ZIP_FILE autoexec.sh remote/)

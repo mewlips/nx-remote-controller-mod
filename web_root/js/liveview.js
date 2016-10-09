@@ -12,6 +12,9 @@ function LiveView(controller) {
 
 LiveView.prototype.init = function () {
     this.target = $('<canvas class="liveview"></canvas>');
+    if (this.controller.isNx300()) {
+        this.target.css('margin-left', '5%');
+    }
     this.controller.viewFinder.addLiveViewCanvas(this.target);
     this.cvs = this.target[0];
     this.ctx = this.cvs.getContext("2d");

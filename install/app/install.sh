@@ -4,7 +4,6 @@ INSTALL_PATH=/opt/storage/sdcard/app
 APP_PATH=/opt/usr/apps/nx-remote-controller-mod
 TOOLS_PATH=$APP_PATH/tools
 NX_PATCH_PATH=/opt/usr/nx-on-wake
-NX_KS_PATH=/opt/home/scripts
 
 # ========= check model and fw version =========
 
@@ -42,8 +41,6 @@ rm -fv $INSTALL_PATH/tools.tar || exit 1
 cp -rv $INSTALL_PATH/* $APP_PATH || exit 1
 if [ -d $NX_PATCH_PATH/auto ]; then
     ln -sfv $APP_PATH/nx-remote-controller-daemon.sh $NX_PATCH_PATH/auto/ || exit 1
-elif [ -d $NX_KS_PATH/auto ]; then
-    ln -sfv $APP_PATH/nx-remote-controller-daemon.sh $NX_KS_PATH/auto/ || exit 1
 fi
 
 echo "=== Cleaning up files... ==="
