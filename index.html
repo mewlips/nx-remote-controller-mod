@@ -32,7 +32,7 @@
       <section>
         <div id="title">
           <h1>nx-remote-controller-mod</h1>
-          <p>Remote Controller Mod for NX1/NX500</p>
+          <p>Remote Controller Mod for NX1/NX500/NX300</p>
           <hr>
           <span class="credits left">Project maintained by <a href="https://github.com/mewlips">mewlips</a></span>
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
@@ -41,13 +41,20 @@
         <h1>
 <a id="nx-remote-controller-mod" class="anchor" href="#nx-remote-controller-mod" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>nx-remote-controller-mod</h1>
 
-<p>Remote Controller Mod for NX1/NX500</p>
+<p>Remote Controller Mod for NX1/NX500/NX300</p>
 
 <h2>
 <a id="downloads" class="anchor" href="#downloads" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Downloads</h2>
 
 <ul>
-<li>v0.8 : <a href="https://github.com/mewlips/nx-remote-controller-mod/releases/download/v0.8/nx-remote-controller-mod-v0.8_nx1_nx500.zip">nx-remote-controller-mod-v0.8_nx1_nx500.zip</a>
+<li>v0.9
+
+<ul>
+<li>NX1/NX500 : <a href="https://github.com/mewlips/nx-remote-controller-mod/releases/download/v0.9/nx-remote-controller-mod-v0.9_nx1_nx500.zip">nx-remote-controller-mod-v0.8_nx1_nx500.zip</a>
+</li>
+<li>NX300 : <a href="https://github.com/mewlips/nx-remote-controller-mod/releases/download/v0.9/nx-remote-controller-mod-v0.9_nx300.zip">nx-remote-controller-mod-v0.8_nx1_nx500.zip</a>
+</li>
+</ul>
 </li>
 <li>
 <a href="https://www.facebook.com/NXKS2/">NX-KS2</a> : NX-KS2 includes nx-remote-controller-mod. (since v2.56)</li>
@@ -62,11 +69,13 @@
 <ul>
 <li>Mirroring camera screen</li>
 <li>Remote control functions</li>
-<li>Multiple connections</li>
+<li>Multiple cameras control</li>
 </ul>
 </li>
-<li>Silent shutter on/off (NX500 only)</li>
+<li>Silent shutter on/off (NX500)</li>
 <li>LCD on/off</li>
+<li>Automatic Wi-Fi connection (NX300)</li>
+<li>Telnet/FTP (NX300)</li>
 </ul>
 
 <h2>
@@ -78,7 +87,10 @@
 <a id="how-to-install" class="anchor" href="#how-to-install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How To Install</h2>
 
 <h3>
-<a id="camera-nx1nx500" class="anchor" href="#camera-nx1nx500" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Camera (NX1/NX500)</h3>
+<a id="camera" class="anchor" href="#camera" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Camera</h3>
+
+<h4>
+<a id="nx1nx500" class="anchor" href="#nx1nx500" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NX1/NX500</h4>
 
 <ul>
 <li>
@@ -94,33 +106,37 @@
 </ul>
 
 <ol>
-<li>Download <a href="https://github.com/mewlips/nx-remote-controller-mod/releases/download/v0.8/nx-remote-controller-mod-v0.8_nx1_nx500.zip">nx-remote-controller-mod-v0.8_nx1_nx500.zip</a>
+<li>Download <a href="https://github.com/mewlips/nx-remote-controller-mod/releases/download/v0.8/nx-remote-controller-mod-v0.9_nx1_nx500.zip">nx-remote-controller-mod-v0.9_nx1_nx500.zip</a>
 </li>
-<li>Unzip the 'nx-remote-controller-mod-v0.8_nx1_nx500.zip' file to root of your SD card.</li>
+<li>Unzip the 'nx-remote-controller-mod-v0.9_nx1_nx500.zip' file to root of your SD card.</li>
 <li>Insert the SD card into your camera and power up the camera.</li>
 <li>Wait. The installation will be completed soon.</li>
 </ol>
 
-<h3>
-<a id="android" class="anchor" href="#android" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><del>Android</del>
-</h3>
+<h4>
+<a id="nx300" class="anchor" href="#nx300" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NX300</h4>
 
-<ul>
-<li><del>Install the <a href="https://github.com/mewlips/nx-remote-controller-mod/raw/master/NXRemoteController-v0.7.apk">https://github.com/mewlips/nx-remote-controller-mod/raw/master/NXRemoteController-v0.7.apk</a></del></li>
-</ul>
+<ol>
+<li>Download <a href="https://github.com/mewlips/nx-remote-controller-mod/releases/download/v0.8/nx-remote-controller-mod-v0.9_nx300.zip">nx-remote-controller-mod-v0.9_nx300.zip</a>
+</li>
+<li>Unzip the 'nx-remote-controller-mod-v0.9_nx300.zip' file to root of your SD card.</li>
+<li>Insert the SD card into your camera and power up the camera.</li>
+</ol>
 
 <h2>
 <a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How To Use</h2>
 
 <ul>
-<li>
-<p>CAUTION: DO NOT CONNECT YOUR CAMERA TO PUBLIC WIFI NETWORK.</p>
+<li>CAUTION: DO NOT CONNECT YOUR CAMERA TO PUBLIC WIFI NETWORK.
 
 <ul>
 <li>nx-remote-controller-mod does not provide secure access.</li>
 </ul>
 </li>
 </ul>
+
+<h3>
+<a id="nx1nx500-nx-patch" class="anchor" href="#nx1nx500-nx-patch" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NX1/NX500 (nx-patch)</h3>
 
 <ol>
 <li>Press the 'MOBILE' button.
@@ -137,25 +153,46 @@
 <li>Open 'http://&lt;IP address of camera&gt;' in web browser.</li>
 </ol>
 
+<h3>
+<a id="nx1nx500-nx-ks2" class="anchor" href="#nx1nx500-nx-ks2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NX1/NX500 (NX-KS2)</h3>
+
+<ol>
+<li>Enable Wi-Fi.</li>
+<li>Make sure the camera and the PC or Mobile device are on the same Wi-Fi network.</li>
+<li>Check 'Remote Ctr' on NX-KS mod menu.</li>
+<li>Camera's IP address will be shown.</li>
+<li>Open 'http://&lt;IP address of camera&gt;' in web browser.</li>
+</ol>
+
+<h3>
+<a id="nx300-1" class="anchor" href="#nx300-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NX300</h3>
+
+<ol>
+<li>Set up Wi-Fi connection through Email app in 'Wi-Fi' mode.</li>
+<li>Turn off the power.</li>
+<li>Turn on the power.</li>
+<li>If the configured Wi-Fi connection available, then the camera's ip address will shown on LCD.</li>
+<li>Open 'http://&lt;IP address of camera&gt;' in web browser.</li>
+</ol>
+
 <h2>
 <a id="known-problems" class="anchor" href="#known-problems" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Known problems</h2>
 
 <ul>
 <li>'Quick View' is not working on remote screen.</li>
 <li>'Enlarging a photo' in playback mode is not working on remote screen.</li>
+<li>IE/Edge Browser is not well supported. (Chrome browser recommended)</li>
+<li>Screen off on video recording feature not supported on NX300. (before the recording, turn off liveview/osd manually)</li>
 </ul>
 
 <h2>
 <a id="todos" class="anchor" href="#todos" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>TODOs</h2>
 
 <ul>
-<li>Support NX300</li>
 <li>Improve battery status (NX1 vertical grip)</li>
-<li>Fullscreen mode</li>
-<li>Viewfinder mode</li>
-<li>Auto update</li>
-<li>Improve user interfaces</li>
+<li>Gallery with thumbnails</li>
 <li>Android app</li>
+<li>Supoprt more NX cameras</li>
 </ul>
 
 <h2>
