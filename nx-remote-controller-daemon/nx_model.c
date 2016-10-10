@@ -198,5 +198,8 @@ const char *get_mac_address(void)
     if (fgets(s_mac_address, sizeof(s_mac_address), file) != NULL) {
         s_mac_address[strlen(s_mac_address) - 1] = '\0';
     }
+    
+    fclose(file);
+
     return s_mac_address;
 }
