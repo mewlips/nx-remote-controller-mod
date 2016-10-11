@@ -1,6 +1,6 @@
 # nx-remote-controller-mod
 
-Remote Controller Mod for NX1/NX500
+Remote Controller Mod for NX1/NX500/NX300
 
 ## Project Home
 
