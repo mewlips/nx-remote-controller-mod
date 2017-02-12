@@ -31,3 +31,7 @@ cp -rfv web_root/{css,fonts,js,lib,index.html} $NX_KS2_WEB_ROOT/
 if [ -f NXRemoteController/app/build/outputs/apk/app-debug.apk ]; then
     cp -fv NXRemoteController/app/build/outputs/apk/app-debug.apk NXRemoteController-v$VERSION.apk
 fi
+if [ -f swagger.json ]; then
+    npm install
+    node_modules/.bin/swagger-markdown -i swagger.json
+fi
