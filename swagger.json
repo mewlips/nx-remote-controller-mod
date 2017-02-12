@@ -1,0 +1,145 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "nx-remote-controller-mod",
+        "version": "0.9"
+    },
+    "prameters": [
+        {
+            "name":"keydown",
+            "type":"string"
+        },
+        {
+            "name":"keyup",
+            "type":"string"
+        },
+        {
+            "name":"mousedown",
+            "type":"string"
+
+        },
+        {
+            "name":"mousemove",
+            "type":"string"
+
+        },
+        {
+            "name":"mouseup",
+            "type":"string"
+        }
+    ],
+    "paths": {
+        "/api/v1/camera/info": {
+            "get": {
+                "description": "Returns camera informations",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description":"camera model, firmware version, mac address"
+                    }
+                }
+            }
+        },
+        "/api/v1/camera/status": {
+            "get": {
+                "description": "Returns status of camera",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description":"battery charging, battery percent, battery level, drive, mode, hevc, cameras"
+                    }
+                }
+            }
+        },
+        "/api/v1/liveview/get": {
+            "get": {
+                "description": "get liveview image"
+            }
+        },
+        "/api/v1/liveview/get_low": {
+            "get": {
+                "description": "get liveview image (Low quality)"
+            }
+        },
+        "/api/v1/osd/get": {
+            "get": {
+                "description": "get osd screen image"
+            }
+        },
+        "/api/v1/input/inject?key=###": {
+            "get": {
+                "description": "send a key event to camera. see https://github.com/mewlips/nx-remote-controller-mod/wiki/Key-mappings"
+            }
+        },
+        "/api/v1/input/inject?keydown=###": {
+            "get": {
+                "description": "send a key down event to camera. see https://github.com/mewlips/nx-remote-controller-mod/wiki/Key-mappings"
+            }
+        },
+        "/api/v1/input/inject?keyup=###": {
+            "get": {
+                "description": "send a key down event to camera. see https://github.com/mewlips/nx-remote-controller-mod/wiki/Key-mappings"
+            }
+        },
+        "/api/v1/input/inject?mousedown=1": {
+            "get": {
+                "description": "send a mouse down event to camera."
+            }
+        },
+        "/api/v1/input/inject?mousemove=x-y": {
+            "get": {
+                "description": "send a mouse move event to camera."
+            }
+        },
+        "/api/v1/input/inject?mouseup=1": {
+            "get": {
+                "description": "send a mouse up event to camera."
+            }
+        },
+
+        "/api/v1/input/inject_keep_alive": {
+            "get": {
+                "description": "send a key for keep alive"
+            }
+        },
+        "/api/v1/lcd/on": {
+            "get": {
+                "description": "Turn on the lcd"
+            }
+        },
+        "/api/v1/lcd/off": {
+            "get": {
+                "description": "Turn off the lcd"
+            }
+        },
+        "/api/v1/lcd/video": {
+            "get": {
+                "description": "Turn off the osd"
+            }
+        },
+        "/api/v1/led/on": {
+            "get": {
+                "description": "Turn on the led"
+            }
+        },
+        "/api/v1/led/off": {
+            "get": {
+                "description": "Turn off the led"
+            }
+        },
+        "/api/v1/shutter/normal": {
+            "get": {
+                "description": "Set shutter to normal (NX500 only)"
+            }
+        },
+        "/api/v1/shutter/silent": {
+            "get": {
+                "description": "Set shutter to silent mode (NX500 only)"
+            }
+        }
+    }
+}
